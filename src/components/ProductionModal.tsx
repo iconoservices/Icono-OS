@@ -154,177 +154,178 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
               </div>
 
               {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                
-                {/* Briefing Section */}
-                <section>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="material-symbols-outlined text-xl text-primary">lightbulb</span>
-                    <h3 className="text-lg font-headline font-bold text-primary">Briefing</h3>
-                  </div>
+              <div className="flex-1 overflow-y-auto p-4 lg:p-6 bg-surface-container-lowest/30">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                   
-                  <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 shadow-sm">
-                    <h4 className="text-[9px] font-bold uppercase tracking-widest text-outline mb-1.5">Objetivo (Goal)</h4>
-                    <textarea 
-                      value={editedData.goal}
-                      onChange={(e) => handleChange("goal", e.target.value)}
-                      placeholder="Describe el objetivo estratégico de este contenido..."
-                      className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm font-medium text-slate-700 leading-relaxed resize-none min-h-[60px] placeholder:text-slate-300"
-                    />
-                  </div>
-                </section>
-
-                {/* Strategy Section */}
-                <section>
-                  <div className="flex items-center gap-2 mb-4">
-                    <span className="material-symbols-outlined text-xl text-primary">dynamic_feed</span>
-                    <h3 className="text-lg font-headline font-bold text-primary">Estrategia</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-                    {/* Hook Card */}
-                    <div className="md:col-span-2 bg-[#00174b] rounded-2xl p-6 flex flex-col justify-center relative overflow-hidden shadow-md">
-                      <div className="relative z-10 text-center">
-                        <textarea 
-                          value={editedData.hook}
-                          onChange={(e) => handleChange("hook", e.target.value)}
-                          placeholder='"¿Qué pasaría si te dijera..."'
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-lg font-bold font-headline text-white italic tracking-tight text-center resize-none placeholder:text-white/20"
-                        />
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent"></div>
-                      <div className="absolute top-3 left-4 text-[9px] font-bold text-white/50 uppercase tracking-widest">Hook (Gancho)</div>
-                    </div>
-                    
-                    {/* Narrative Arc Card */}
-                    <div className="md:col-span-3 bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 flex flex-col shadow-sm">
-                      <div className="flex-1 mb-4">
-                        <h4 className="text-[9px] font-bold uppercase tracking-widest text-outline mb-2">Arco Narrativo (Cuerpo)</h4>
-                        <textarea 
-                          value={editedData.narrative}
-                          onChange={(e) => handleChange("narrative", e.target.value)}
-                          placeholder="Describe el desarrollo del video, tomas, música..."
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700 leading-relaxed resize-none min-h-[100px] placeholder:text-slate-300"
-                        />
+                  {/* Left Column - Main Content (Strategy & Writing) */}
+                  <div className="lg:col-span-7 space-y-6">
+                    {/* Briefing Section */}
+                    <section className="bg-white rounded-2xl border border-outline-variant/10 p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-lg text-primary">lightbulb</span>
+                        <h3 className="text-sm font-bold text-primary uppercase tracking-tight">Briefing</h3>
                       </div>
                       
-                      <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3 mt-auto">
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-outline">Call to Action (CTA)</span>
-                        <div className="flex items-center gap-1">
+                      <div className="bg-surface-container-lowest border border-outline-variant/5 rounded-xl p-3">
+                        <h4 className="text-[8px] font-bold uppercase tracking-widest text-outline mb-1">Objetivo Estratégico</h4>
+                        <textarea 
+                          value={editedData.goal}
+                          onChange={(e) => handleChange("goal", e.target.value)}
+                          placeholder="Describe el objetivo..."
+                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[13px] font-medium text-slate-700 leading-snug resize-none min-h-[40px] placeholder:text-slate-300"
+                        />
+                      </div>
+                    </section>
+
+                    {/* Strategy Section */}
+                    <section className="bg-white rounded-2xl border border-outline-variant/10 p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-lg text-primary">dynamic_feed</span>
+                        <h3 className="text-sm font-bold text-primary uppercase tracking-tight">Estrategia</h3>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {/* Hook Card */}
+                        <div className="bg-[#00174b] rounded-xl p-4 relative overflow-hidden shadow-md">
+                          <h4 className="absolute top-2 left-3 text-[8px] font-bold text-white/40 uppercase tracking-widest">Hook (Gancho)</h4>
+                          <textarea 
+                            value={editedData.hook}
+                            onChange={(e) => handleChange("hook", e.target.value)}
+                            placeholder='"¿Qué pasaría si te dijera..."'
+                            className="w-full bg-transparent border-none focus:ring-0 p-0 text-base font-bold font-headline text-white italic tracking-tight text-center resize-none mt-2 placeholder:text-white/10"
+                            rows={2}
+                          />
+                        </div>
+                        
+                        {/* Narrative Arc Card */}
+                        <div className="bg-surface-container-lowest border border-outline-variant/5 rounded-xl p-3">
+                          <h4 className="text-[8px] font-bold uppercase tracking-widest text-outline mb-1.5">Arco Narrativo (Cuerpo)</h4>
+                          <textarea 
+                            value={editedData.narrative}
+                            onChange={(e) => handleChange("narrative", e.target.value)}
+                            placeholder="Desarrollo del contenido..."
+                            className="w-full bg-transparent border-none focus:ring-0 p-0 text-[13px] text-slate-700 leading-relaxed resize-none min-h-[160px] placeholder:text-slate-300"
+                          />
+                          
+                          <div className="flex items-center justify-between border-t border-outline-variant/5 pt-2 mt-2">
+                            <span className="text-[8px] font-bold uppercase tracking-widest text-outline">CTA</span>
+                            <div className="flex items-center gap-1">
+                              <input 
+                                type="text"
+                                value={editedData.cta}
+                                onChange={(e) => handleChange("cta", e.target.value)}
+                                className="bg-transparent border-none focus:ring-0 p-0 text-xs font-bold text-primary text-right w-24 placeholder:text-primary/20"
+                              />
+                              <span className="material-symbols-outlined text-[10px] text-primary">arrow_outward</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+
+                  {/* Right Column - Assets (Resources & Inspiration) */}
+                  <div className="lg:col-span-5 space-y-6">
+                    {/* Resources Section */}
+                    <section className="bg-white rounded-2xl border border-outline-variant/10 p-4 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-lg text-primary">folder</span>
+                          <h3 className="text-sm font-bold text-primary uppercase tracking-tight">Recursos</h3>
+                        </div>
+                        <button className="text-[10px] font-bold text-surface-tint flex items-center gap-0.5 hover:opacity-80">
+                          <span className="material-symbols-outlined text-sm">add</span> Add
+                        </button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="bg-surface-container-lowest rounded-xl p-3 flex items-center gap-3 border border-outline-variant/5 focus-within:border-primary/20 shadow-sm transition-all">
+                          <div className="h-8 w-8 bg-surface-container-high rounded-lg flex items-center justify-center text-primary shrink-0 transition-transform group-focus-within:scale-90">
+                            <span className="material-symbols-outlined text-base">link</span>
+                          </div>
+                          <div className="flex-1 flex flex-col">
+                            <h4 className="text-[9px] font-bold text-primary uppercase tracking-tight">Raw Footage</h4>
+                            <input 
+                              type="text"
+                              value={editedData.resources?.drive || ""}
+                              onChange={(e) => handleNestedChange("resources", "drive", e.target.value)}
+                              placeholder="Link de Drive..."
+                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/20"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="bg-surface-container-lowest rounded-xl p-3 flex items-center gap-3 border border-outline-variant/5 focus-within:border-primary/20 shadow-sm transition-all">
+                          <div className="h-8 w-8 bg-surface-container-high rounded-lg flex items-center justify-center text-primary shrink-0 transition-transform group-focus-within:scale-90">
+                            <span className="material-symbols-outlined text-base">check_circle</span>
+                          </div>
+                          <div className="flex-1 flex flex-col">
+                            <h4 className="text-[9px] font-bold text-primary uppercase tracking-tight">Export Final</h4>
+                            <input 
+                              type="text"
+                              value={editedData.resources?.export || ""}
+                              onChange={(e) => handleNestedChange("resources", "export", e.target.value)}
+                              placeholder="Link del export..."
+                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/20"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Inspiration Section */}
+                    <section className="bg-white rounded-2xl border border-outline-variant/10 p-4 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-lg text-primary">auto_awesome</span>
+                        <h3 className="text-sm font-bold text-primary uppercase tracking-tight">Inspiración</h3>
+                      </div>
+                      
+                      <div className="bg-surface-container-lowest border border-outline-variant/5 rounded-xl p-3 flex flex-col gap-3 focus-within:border-primary/20 transition-all">
+                        <div className="flex gap-3">
+                          <div className="w-16 h-24 bg-slate-900 rounded-lg shrink-0 overflow-hidden relative group border border-outline-variant/10 shadow-inner">
+                            {isFetchingThumbnail && (
+                              <div className="absolute inset-0 z-20 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
+                                <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                              </div>
+                            )}
+                            <img 
+                              src={editedData.inspiration?.imageUrl} 
+                              className={`w-full h-full object-cover transition-all duration-500 ${isFetchingThumbnail ? 'blur-sm scale-110' : 'blur-0 scale-100'}`} 
+                              alt="Inspiration" 
+                            />
+                          </div>
+                          <div className="flex-1 flex flex-col">
+                            <input 
+                              type="text"
+                              value={editedData.inspiration?.title || ""}
+                              onChange={(e) => handleNestedChange("inspiration", "title", e.target.value)}
+                              placeholder="Nombre de Ref..."
+                              className="text-[10px] font-bold uppercase tracking-widest text-outline bg-transparent border-none focus:ring-0 p-0 w-full"
+                            />
+                            <textarea 
+                              value={editedData.inspiration?.description || ""}
+                              onChange={(e) => handleNestedChange("inspiration", "description", e.target.value)}
+                              placeholder="Descripción de la idea..."
+                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-[11px] font-medium text-primary leading-snug mt-1 resize-none h-16"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="pt-2 border-t border-outline-variant/5 flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[14px] text-[#ff0050]">link</span>
                           <input 
                             type="text"
-                            value={editedData.cta}
-                            onChange={(e) => handleChange("cta", e.target.value)}
-                            className="bg-transparent border-none focus:ring-0 p-0 text-sm font-bold text-primary text-right w-24 placeholder:text-primary/20"
+                            value={editedData.inspiration?.url || ""}
+                            onChange={(e) => handleNestedChange("inspiration", "url", e.target.value)}
+                            placeholder="Link de TikTok / Referencia"
+                            className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-[10px] font-bold text-[#ff0050] placeholder:text-[#ff0050]/20"
                           />
-                          <span className="material-symbols-outlined text-[12px] text-primary">arrow_outward</span>
                         </div>
                       </div>
-                    </div>
+                    </section>
                   </div>
-                </section>
-
-                {/* Resources Section - Keeping static for now as it needs a more complex schema */}
-                <section>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-xl text-primary">folder</span>
-                      <h3 className="text-lg font-headline font-bold text-primary">Recursos</h3>
-                    </div>
-                    <button className="text-sm font-bold text-surface-tint flex items-center gap-1 hover:opacity-80 transition-opacity">
-                      <span className="material-symbols-outlined text-[18px]">add</span> Add Link
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-all group border border-transparent focus-within:border-primary/20">
-                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary shadow-sm shrink-0">
-                        <span className="material-symbols-outlined">link</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-[11px] font-bold text-primary">Raw Footage (Drive)</h4>
-                        <input 
-                          type="text"
-                          value={editedData.resources?.drive || ""}
-                          onChange={(e) => handleNestedChange("resources", "drive", e.target.value)}
-                          placeholder="Pega el link aquí..."
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/30"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-all group border border-transparent focus-within:border-primary/20">
-                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary shadow-sm shrink-0">
-                        <span className="material-symbols-outlined">check_circle</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-[11px] font-bold text-primary">Export Final</h4>
-                        <input 
-                          type="text"
-                          value={editedData.resources?.export || ""}
-                          onChange={(e) => handleNestedChange("resources", "export", e.target.value)}
-                          placeholder="Pega el link del export..."
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/30"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                {/* Inspiration Section */}
-                <section className="pb-8">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="material-symbols-outlined text-xl text-primary">auto_awesome</span>
-                    <h3 className="text-lg font-headline font-bold text-primary">Inspiración</h3>
-                  </div>
-                  
-                  <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-outline-variant transition-colors focus-within:border-primary/30">
-                    <div className="w-16 h-24 bg-slate-900 rounded-lg shrink-0 overflow-hidden relative group border border-outline-variant/10 shadow-inner">
-                      {isFetchingThumbnail && (
-                        <div className="absolute inset-0 z-20 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
-                          <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                        </div>
-                      )}
-                      <img 
-                        src={editedData.inspiration?.imageUrl} 
-                        className={`w-full h-full object-cover transition-all duration-500 ${isFetchingThumbnail ? 'blur-sm scale-110' : 'blur-0 scale-100'}`} 
-                        alt="Inspiration" 
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="material-symbols-outlined text-white text-base">image</span>
-                      </div>
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex flex-col">
-                        <input 
-                          type="text"
-                          value={editedData.inspiration?.title || ""}
-                          onChange={(e) => handleNestedChange("inspiration", "title", e.target.value)}
-                          placeholder="Título de referencia..."
-                          className="text-[9px] font-bold uppercase tracking-widest text-outline bg-transparent border-none focus:ring-0 p-0"
-                        />
-                        <textarea 
-                          value={editedData.inspiration?.description || ""}
-                          onChange={(e) => handleNestedChange("inspiration", "description", e.target.value)}
-                          placeholder="Describe el estilo o referencia..."
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[11px] font-medium text-primary leading-tight mt-1 resize-none"
-                          rows={2}
-                        />
-                      </div>
-                      
-                      <div className="pt-2 border-t border-outline-variant/10 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[14px] text-[#ff0050]">link</span>
-                        <input 
-                          type="text"
-                          value={editedData.inspiration?.url || ""}
-                          onChange={(e) => handleNestedChange("inspiration", "url", e.target.value)}
-                          placeholder="Link de TikTok / Referencia"
-                          className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-[10px] font-bold text-[#ff0050] placeholder:text-[#ff0050]/20"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </section>
+                </div>
+              </div>
                 
               </div>
             </motion.div>
