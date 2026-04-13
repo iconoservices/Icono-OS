@@ -324,9 +324,6 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                       </div>
                     </section>
                   </div>
-                </div>
-              </div>
-                
               </div>
             </motion.div>
           </div>
