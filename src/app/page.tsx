@@ -596,73 +596,71 @@ export default function Dashboard() {
             <aside className="w-80 flex flex-col p-6 h-full overflow-y-auto no-scrollbar relative">
               
               {activeMatrixSlot ? (
-                /* BUCKET GESTOR UI */
+                /* BUCKET GESTOR UI - HIGH DENSITY */
                 <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="mb-6 flex flex-col gap-4">
-                    <div className="flex items-start gap-2">
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-3">
                       <button 
                         onClick={() => setActiveMatrixSlot(null)}
-                        className="mt-1 shrink-0 p-1 rounded hover:bg-outline-variant/10 text-on-surface-variant transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-outline-variant/10 text-on-surface-variant transition-colors"
                       >
                         <span className="material-symbols-outlined text-sm">arrow_back</span>
                       </button>
-                      <div className="flex-1">
-                        <h3 className="text-xs font-bold text-outline-variant uppercase tracking-widest mb-1">
-                          {activeMatrixSlot.day} • {activeMatrixSlot.colId}
-                        </h3>
-                        <input 
-                          type="text"
-                          value={activeMatrixSlot.text}
-                          onChange={(e) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { text: e.target.value })}
-                          placeholder="Nombre de la acción estratégica..."
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-lg font-extrabold tracking-tight font-headline placeholder:text-outline-variant/40"
-                          autoFocus
-                        />
-                      </div>
+                      <button 
+                        onClick={() => handleDeleteAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId)}
+                        className="p-1.5 rounded-lg text-error hover:bg-error/10 transition-colors"
+                        title="Eliminar Acción"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
                     </div>
 
-                    <div className="space-y-4">
-                      {/* Time Input Component */}
-                      <div className="flex flex-col gap-2 p-4 rounded-2xl bg-white border border-outline-variant/10 shadow-sm">
+                    <div className="mb-4">
+                      <h3 className="text-[9px] font-bold text-outline-variant uppercase tracking-widest mb-0.5">
+                        {activeMatrixSlot.day} • {activeMatrixSlot.colId}
+                      </h3>
+                      <input 
+                        type="text"
+                        value={activeMatrixSlot.text}
+                        onChange={(e) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { text: e.target.value })}
+                        placeholder="Acción estratégica..."
+                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-base font-extrabold tracking-tight font-headline placeholder:text-outline-variant/30"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {/* Time Input Component - COMPACT */}
+                      <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-white border border-outline-variant/5 shadow-sm">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-outline-variant uppercase tracking-widest">Horario (Opcional)</span>
-                          <span className="material-symbols-outlined text-sm text-slate-300">schedule</span>
+                          <span className="text-[8px] font-bold text-outline uppercase tracking-widest">Horario</span>
+                          <span className="material-symbols-outlined text-[12px] text-slate-300">schedule</span>
                         </div>
                         <input 
                           type="text"
                           value={activeMatrixSlot.time || ""}
                           onChange={(e) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { time: e.target.value })}
-                          placeholder="Ej: 18:00 o Tarde"
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 py-1 text-sm font-bold text-primary placeholder:text-slate-300"
+                          placeholder="Ej: 18:00"
+                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[11px] font-bold text-primary placeholder:text-slate-300"
                         />
                       </div>
 
-                      {/* Campaign Selection Component (Display only if multiple campaigns exist) */}
-                      <div className="flex flex-col gap-3 p-4 rounded-2xl bg-white border border-outline-variant/10 shadow-sm">
-                        <span className="text-[10px] font-bold text-outline-variant uppercase tracking-widest">Asignada a</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-xs text-primary">campaign</span>
+                      {/* Campaign Selection Component - COMPACT */}
+                      <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-white border border-outline-variant/5 shadow-sm">
+                        <span className="text-[8px] font-bold text-outline uppercase tracking-widest">Asignada a</span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="w-4 h-4 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-[10px] text-primary">campaign</span>
                           </div>
-                          <span className="text-xs font-bold text-slate-700">
-                            {campaigns.find(c => c.id === activeMatrixSlot.campaignId)?.name || 'Estrategia Unificada'}
+                          <span className="text-[10px] font-bold text-slate-700 truncate min-w-0">
+                            {campaigns.find(c => c.id === activeMatrixSlot.campaignId)?.name || 'Estrategia'}
                           </span>
                         </div>
-                      </div>
-
-                      <div className="flex justify-between items-center px-1 pt-2">
-                        <button 
-                          onClick={() => handleDeleteAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-error/10 text-error hover:bg-error/20 transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-sm">delete</span>
-                          <span className="text-[10px] font-bold uppercase">Eliminar Acción</span>
-                        </button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex-1 flex flex-col gap-3 overflow-hidden mt-6">
+                  <div className="flex-1 flex flex-col gap-2 overflow-hidden">
                     <div className="flex items-center justify-between px-1">
                       <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Piezas de Producción</span>
                       <button 
@@ -673,28 +671,29 @@ export default function Dashboard() {
                       </button>
                     </div>
                     
-                    <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pb-4">
+                    <div className="flex-1 overflow-y-auto no-scrollbar space-y-1.5 pb-4">
                       {globalContents
                         .filter(c => c.matrixSlot.day === activeMatrixSlot.day && c.matrixSlot.colId === activeMatrixSlot.colId)
                         .map((content) => (
                         <div 
                           key={content.id}
                           onClick={() => setSelectedEvent(content)}
-                          className={`p-2.5 rounded-xl border border-outline-variant/10 bg-white hover:border-primary/30 hover:shadow-sm cursor-pointer transition-all flex items-center gap-3 group`}
+                          className={`p-2 rounded-xl border border-outline-variant/10 bg-white hover:border-primary/20 hover:shadow-sm cursor-pointer transition-all flex items-center gap-2.5 group`}
                         >
-                          <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${content.color}`}>
-                            <span className={`material-symbols-outlined text-[14px] ${content.iconColor}`}>{content.icon}</span>
+                          <div className={`h-6 w-6 rounded-lg flex items-center justify-center shrink-0 ${content.color}`}>
+                            <span className={`material-symbols-outlined text-[12px] ${content.iconColor}`}>{content.icon}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-bold text-primary truncate">{content.title}</p>
-                            <p className="text-[9px] text-on-surface-variant uppercase tracking-widest font-semibold">{content.type}</p>
+                            <p className="text-[10.5px] font-bold text-primary truncate leading-tight">{content.title}</p>
+                            <p className="text-[8px] text-on-surface-variant uppercase tracking-widest font-semibold">{content.type}</p>
                           </div>
+                          <span className="material-symbols-outlined text-slate-300 text-sm opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
                         </div>
                       ))}
 
                       <button 
                         onClick={() => handleAddContentToSlot(activeMatrixSlot.day, activeMatrixSlot.colId, activeMatrixSlot.campaignId)}
-                        className="w-full py-2.5 border-2 border-dashed border-outline-variant/20 rounded-xl text-[10px] font-bold text-outline-variant hover:text-primary hover:border-primary/40 transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-2 border-2 border-dashed border-outline-variant/20 rounded-xl text-[9px] font-bold text-outline-variant/60 hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-sm">add</span> NUEVO ITEM
                       </button>
