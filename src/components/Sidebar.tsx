@@ -9,7 +9,24 @@ import { projectCampaigns } from "@/data/mock";
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { projects, currentProject, setCurrentProject, hiddenCampaignIds, toggleCampaignVisibility } = useProject();
+  const { projects, currentProject, setCurrentProject, hiddenCampaignIds, toggleCampaignVisibility, allProjectCampaigns, deleteCampaign } = useProject();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setConfirmDeleteId(id);
+  };
+
+  const handleConfirmDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    await deleteCampaign(id);
+    setConfirmDeleteId(null);
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDeleteId(null);
+  };
 
   return (
     <motion.aside 
@@ -118,20 +135,66 @@ export default function Sidebar() {
               <span className="material-symbols-outlined text-xs text-slate-400">layers</span>
             </div>
             <div className="space-y-3 px-1">
-              {(projectCampaigns[currentProject.id] || []).map((camp) => {
+              {(allProjectCampaigns[currentProject.id] || []).map((camp) => {
                 const isVisible = !hiddenCampaignIds.includes(camp.id);
+                const isDeleting = confirmDeleteId === camp.id;
+                
                 return (
-                  <div 
-                    key={camp.id}
-                    onClick={() => toggleCampaignVisibility(camp.id)}
-                    className="flex items-center gap-3 group cursor-pointer"
-                  >
-                    <div className={`w-3.5 h-3.5 rounded-full border-2 transition-all flex items-center justify-center ${isVisible ? 'bg-primary border-primary ring-2 ring-primary/20' : 'border-slate-300 dark:border-slate-800'}`}>
-                      {isVisible && <span className="material-symbols-outlined text-[8px] text-white font-bold">check</span>}
-                    </div>
-                    <span className={`text-[11px] font-bold transition-colors ${isVisible ? 'text-slate-700 dark:text-slate-200' : 'text-slate-500/60'}`}>
-                      {camp.name}
-                    </span>
+                  <div key={camp.id} className="relative group">
+                    <AnimatePresence mode="wait">
+                      {isDeleting ? (
+                        <motion.div 
+                          key="confirm"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          className="bg-error-container/20 p-2 rounded-xl border border-error/20 flex flex-col gap-2"
+                        >
+                          <span className="text-[9px] font-black text-error uppercase tracking-tighter">¿Eliminar {camp.name}?</span>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={(e) => handleConfirmDelete(e, camp.id)}
+                              className="px-2 py-0.5 bg-error text-white text-[9px] font-bold rounded-md uppercase"
+                            >
+                              Sí
+                            </button>
+                            <button 
+                              onClick={handleCancelDelete}
+                              className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-[9px] font-bold rounded-md uppercase"
+                            >
+                              No
+                            </button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div 
+                          key="item"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          onClick={() => toggleCampaignVisibility(camp.id)}
+                          className="flex items-center justify-between group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3.5 h-3.5 rounded-full border-2 transition-all flex items-center justify-center ${isVisible ? 'bg-primary border-primary ring-2 ring-primary/20' : 'border-slate-300 dark:border-slate-800'}`}>
+                              {isVisible && <span className="material-symbols-outlined text-[8px] text-white font-bold">check</span>}
+                            </div>
+                            <span className={`text-[11px] font-bold transition-colors ${isVisible ? 'text-slate-700 dark:text-slate-200' : 'text-slate-500/60'}`}>
+                              {camp.name}
+                            </span>
+                          </div>
+                          
+                          {!camp.isBase && (
+                            <button 
+                              onClick={(e) => handleDeleteClick(e, camp.id)}
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-error/10 text-error/40 hover:text-error transition-all"
+                            >
+                              <span className="material-symbols-outlined text-xs">delete</span>
+                            </button>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 );
               })}
