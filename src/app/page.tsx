@@ -322,9 +322,9 @@ export default function Dashboard() {
                   <tbody className="divide-y divide-outline-variant/5">
                     {matrixDays.map((dayName) => (
                       <tr key={dayName} className="hover:bg-primary/[0.02] transition-colors group">
-                        <td className="py-6 px-6 align-top">
-                          <span className="text-sm font-black text-slate-800 dark:text-slate-100 tracking-tighter block">{dayName}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Octubre</span>
+                        <td className="py-6 px-6 align-top bg-surface-container-low/20 border-r border-outline-variant/5">
+                          <span className="text-base font-black text-primary tracking-tighter block leading-none">{dayName}</span>
+                          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mt-1 block">Octubre</span>
                         </td>
                         
                         {initialMatrixColumns.map(col => {
