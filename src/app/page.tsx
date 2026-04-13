@@ -191,12 +191,26 @@ export default function Dashboard() {
     return day === 0 ? 6 : day - 1; // Adjust for Monday start
   };
 
-  const daysInMonth = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth());
-  const firstDayIdx = getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth());
+   const daysInMonth = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth());
+   const firstDayIdx = getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth());
+   
+   const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+   const prevMonthDaysCount = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth() - 1);
+   const prevMonthEmptyDays = Array.from({ length: firstDayIdx }, (_, i) => prevMonthDaysCount - firstDayIdx + i + 1);
   
-  const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  const prevMonthDaysCount = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth() - 1);
-  const prevMonthEmptyDays = Array.from({ length: firstDayIdx }, (_, i) => prevMonthDaysCount - firstDayIdx + i + 1);
+  // Calculate current week days based on currentDate
+  const getWeeklyDays = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday start
+    const monday = new Date(d.setDate(diff));
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + i);
+      return day;
+    });
+  };
+  const currentWeekDays = getWeeklyDays(currentDate);
 
   return (
     <div className="flex-1 flex overflow-hidden">
@@ -426,7 +440,7 @@ export default function Dashboard() {
                       <span className="text-sm font-medium text-on-surface-variant/40">{day}</span>
                     </div>
                   ))}
-                  {currentMonthDays.map(day => {
+                   {currentMonthDays.map(day => {
                     const events = globalContents.filter(e => 
                       e.day === day && 
                       e.projectId === currentProject?.id &&
@@ -438,8 +452,11 @@ export default function Dashboard() {
                                    currentDate.getFullYear() === today.getFullYear();
                     
                     return (
-                      <div key={`curr-${day}`} className={`bg-surface-container-lowest min-h-[140px] p-3 transition-colors hover:bg-surface-container-low ${isToday ? 'ring-2 ring-primary ring-inset' : ''}`}>
-                        <span className={`text-sm font-bold ${isToday ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{day}</span>
+                      <div key={`curr-${day}`} className={`bg-surface-container-lowest min-h-[140px] p-3 transition-colors hover:bg-surface-container-low ${isToday ? 'bg-primary/5' : ''}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`text-sm font-bold ${isToday ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{day}</span>
+                          {isToday && <span className="text-[8px] font-black text-primary uppercase tracking-widest px-1.5 py-0.5 bg-primary/10 rounded-full">Hoy</span>}
+                        </div>
                         <div className="mt-2 space-y-2">
                           {events.map((event, idx) => (
                             <div key={idx} onClick={() => setSelectedEvent(event)} className={`flex items-center gap-2 p-2 rounded-lg ${event.color} border-l-4 ${event.borderColor} group cursor-pointer transition-all hover:scale-[1.02]`}>
@@ -504,17 +521,24 @@ export default function Dashboard() {
                   <div key={day} className="bg-surface-container-low py-3 text-center text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">{day}</div>
                 ))}
                 
-                {currentWeekDays.map(day => {
+                {currentWeekDays.map((date, idx) => {
+                  const dayNum = date.getDate();
                   const events = globalContents.filter(e => 
-                    e.day === day && 
+                    e.day === dayNum && 
                     e.projectId === currentProject?.id &&
                     !hiddenCampaignIds.includes(e.campaignId)
                   );
-                  const isToday = day === 4;
+                  const today = new Date();
+                  const isToday = date.getDate() === today.getDate() && 
+                                 date.getMonth() === today.getMonth() && 
+                                 date.getFullYear() === today.getFullYear();
                   
                   return (
-                    <div key={`week-${day}`} className={`bg-surface-container-lowest min-h-[500px] p-4 transition-colors hover:bg-surface-container-low ${isToday ? 'border-2 border-primary-fixed bg-surface-container-low/20' : ''}`}>
-                      <span className={`text-sm font-bold block mb-4 ${isToday ? 'text-primary' : 'text-primary'}`}>{day}</span>
+                    <div key={`week-${idx}`} className={`bg-surface-container-lowest min-h-[500px] p-4 transition-colors hover:bg-surface-container-low ${isToday ? 'bg-primary/[0.03] ring-2 ring-primary ring-inset' : ''}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className={`text-sm font-bold ${isToday ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{dayNum}</span>
+                        {isToday && <span className="text-[9px] font-black text-primary uppercase tracking-widest">HOY</span>}
+                      </div>
                       <div className="space-y-3">
                         {events.map((event, idx) => (
                           <div 
