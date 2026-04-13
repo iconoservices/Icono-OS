@@ -669,7 +669,7 @@ export default function Dashboard() {
                       ))}
 
                       <button 
-                        onClick={handleAddContentToSlot}
+                        onClick={() => handleAddContentToSlot(activeMatrixSlot.day, activeMatrixSlot.colId, activeMatrixSlot.campaignId)}
                         className="w-full py-2.5 border-2 border-dashed border-outline-variant/20 rounded-xl text-[10px] font-bold text-outline-variant hover:text-primary hover:border-primary/40 transition-colors flex items-center justify-center gap-2"
                       >
                         <span className="material-symbols-outlined text-sm">add</span> NUEVO ITEM
