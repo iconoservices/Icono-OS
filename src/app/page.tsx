@@ -33,7 +33,7 @@ const defaultCampaigns = [
 ];
 
 export default function Dashboard() {
-  const { currentProject, hiddenCampaignIds, globalContents, setGlobalContents, allProjectCampaigns, setAllProjectCampaigns, campaigns, addContent, updateContent, deleteContent, updateCampaign } = useProject();
+  const { currentProject, hiddenCampaignIds, globalContents, setGlobalContents, allProjectCampaigns, setAllProjectCampaigns, addContent, updateContent, deleteContent, updateCampaign } = useProject();
   const [view, setView] = useState<"monthly" | "weekly" | "matrix" | "yearly">("matrix");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
@@ -105,7 +105,7 @@ export default function Dashboard() {
   };
 
   // Compute active campaigns based on project
-  const campaigns = currentProject ? (allProjectCampaigns[currentProject.id] || defaultCampaigns) : defaultCampaigns;
+  const campaigns = currentProject ? (allProjectCampaigns[currentProject.id] || []) : [];
 
   const handleUpdateAction = async (campaignId: string, actionId: string, day: string, colId: string, updates: { text?: string, time?: string }) => {
     const campaign = campaigns.find(c => c.id === campaignId);
