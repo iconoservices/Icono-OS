@@ -217,66 +217,78 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col min-w-0 bg-surface">
         <div className="flex-1 p-4 md:p-6 overflow-y-auto no-scrollbar">
           
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-3xl font-extrabold text-primary tracking-tight font-headline capitalize">{view === 'monthly' ? `${monthName} ${year}` : 'Estrategia de Contenido'}</h2>
-              <p className="text-on-surface-variant/70 text-sm">Revisando distribución para <span className="font-bold text-primary">{currentProject?.name || "Sin Proyecto"}</span></p>
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-outline-variant uppercase tracking-[0.2em] mb-0.5">
+                {view === 'monthly' ? 'Calendario Mensual' : 'Estrategia de Contenido'}
+              </span>
+              <h2 className="text-xl font-black text-primary tracking-tight font-headline flex items-center gap-2">
+                {view === 'monthly' ? monthName : currentProject?.name || "Sin Proyecto"}
+                <span className="text-slate-300 text-sm font-light">
+                  {view === 'matrix' ? '• Plan Maestro' : `• ${year}`}
+                </span>
+              </h2>
             </div>
-            <div className="flex gap-3">
-              <div className="flex items-center bg-surface-container-low rounded-lg p-1">
+            
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <div className="flex items-center bg-surface-container-low/50 rounded-lg p-0.5 border border-outline-variant/10">
                 <button 
                   onClick={() => setView('matrix')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${view === 'matrix' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${view === 'matrix' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   Matriz
                 </button>
                 <button 
                   onClick={() => setView('weekly')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${view === 'weekly' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${view === 'weekly' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   Semanal
                 </button>
                 <button 
                   onClick={() => setView('monthly')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${view === 'monthly' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${view === 'monthly' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   Mensual
                 </button>
                 <button 
                   onClick={() => setView('yearly')}
-                  className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${view === 'yearly' ? 'bg-surface-container-lowest shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${view === 'yearly' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   Anual
                 </button>
               </div>
 
-              <button 
-                onClick={handleGoToToday}
-                className="px-4 py-2 text-sm font-semibold rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors"
-              >
-                Hoy
-              </button>
-              <div className="flex items-center bg-surface-container-low rounded-lg p-1">
+              <div className="h-4 w-px bg-outline-variant/20 mx-1 hidden sm:block"></div>
+
+              <div className="flex items-center gap-1.5">
                 <button 
-                  onClick={handlePrevMonth}
-                  className="p-1.5 hover:bg-surface-container-lowest rounded-md transition-all"
+                  onClick={handleGoToToday}
+                  className="px-3 py-1 text-[11px] font-bold rounded-lg bg-white border border-outline-variant/10 hover:bg-surface-container-low transition-colors shadow-sm"
                 >
-                  <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  Hoy
                 </button>
-                <button 
-                  onClick={handleNextMonth}
-                  className="p-1.5 hover:bg-surface-container-lowest rounded-md transition-all"
-                >
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
-                </button>
+                <div className="flex items-center bg-surface-container-low/50 rounded-lg p-0.5 border border-outline-variant/10">
+                  <button 
+                    onClick={handlePrevMonth}
+                    className="p-1 hover:bg-white hover:shadow-sm rounded-md transition-all"
+                  >
+                    <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  </button>
+                  <button 
+                    onClick={handleNextMonth}
+                    className="p-1 hover:bg-white hover:shadow-sm rounded-md transition-all"
+                  >
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                </div>
               </div>
-              <div className="w-px h-8 bg-outline-variant/30 mx-1"></div>
+
               <button 
                 onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
-                className={`p-2 rounded-lg transition-colors flex items-center justify-center ${isRightPanelOpen ? 'bg-primary-fixed text-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface'}`}
+                className={`p-1.5 rounded-lg transition-colors flex items-center justify-center ${isRightPanelOpen ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-white border border-outline-variant/10 text-on-surface-variant hover:bg-surface-container-low'}`}
                 title="Alternar Tareas"
               >
-                <span className="material-symbols-outlined text-[20px]">{isRightPanelOpen ? 'right_panel_close' : 'right_panel_open'}</span>
+                <span className="material-symbols-outlined text-[18px]">{isRightPanelOpen ? 'dock_to_right' : 'right_panel_open'}</span>
               </button>
             </div>
           </div>
