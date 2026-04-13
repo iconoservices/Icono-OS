@@ -208,6 +208,30 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                     </div>
                   </div>
                 </section>
+
+                {/* Inspiration Section */}
+                <section className="pb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="material-symbols-outlined text-xl text-primary">auto_awesome</span>
+                    <h3 className="text-lg font-headline font-bold text-primary">Inspiración</h3>
+                  </div>
+                  
+                  <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-3 shadow-sm flex items-start gap-3 hover:border-outline-variant transition-colors cursor-pointer">
+                    <div className="w-12 h-16 bg-slate-900 rounded-lg shrink-0 overflow-hidden relative group">
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="material-symbols-outlined text-white text-base">play_arrow</span>
+                      </div>
+                      <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=300&fit=crop" className="w-full h-full object-cover" alt="Inspiration" />
+                    </div>
+                    <div className="flex-1 py-0.5">
+                      <h4 className="text-[8px] font-bold uppercase tracking-widest text-outline mb-0.5">Referencia 01</h4>
+                      <p className="text-[11px] font-bold text-primary leading-tight line-clamp-2">Estilo de cortes rápidos y tipografía cinética agresiva.</p>
+                      <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-[#ff0050]">
+                         <span className="material-symbols-outlined text-[12px]">open_in_new</span> Ver en TikTok
+                      </div>
+                    </div>
+                  </div>
+                </section>
                 
               </div>
             </motion.div>
