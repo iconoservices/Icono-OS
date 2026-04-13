@@ -52,19 +52,20 @@ export default function Dashboard() {
   };
 
   const handleAddContentToSlot = async (dayName: string, colId: string, campaignId: string) => {
+    if (!colId) return;
     // This now adds to globalContents (Production pieces)
     const newContent = {
       id: Date.now().toString(),
       projectId: currentProject?.id || '2',
-      campaignId: campaignId,
-      day: getNumericDay(dayName),
+      campaignId: campaignId || 'base_2',
+      day: dayName ? getNumericDay(dayName) : 1,
       type: colId.toUpperCase(),
       title: "Nueva Pieza...",
       color: "bg-surface-container",
       iconColor: "text-primary",
       borderColor: "border-primary",
       icon: "add_box",
-      matrixSlot: { day: dayName, colId: colId }
+      matrixSlot: { day: dayName || 'Lunes', colId: colId }
     };
     await addContent(newContent);
     setSelectedEvent(newContent);
