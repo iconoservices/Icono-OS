@@ -25,6 +25,13 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
         hook: eventData.hook || "",
         narrative: eventData.narrative || "",
         cta: eventData.cta || "Link en bio",
+        resources: eventData.resources || { drive: "", export: "" },
+        inspiration: eventData.inspiration || { 
+          title: "Referencia 01", 
+          description: "Estilo de cortes rápidos y tipografía cinética agresiva.",
+          url: "",
+          imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=300&fit=crop"
+        }
       });
     }
   }, [eventData]);
@@ -43,8 +50,18 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: any) => {
     setEditedData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleNestedChange = (parent: string, field: string, value: string) => {
+    setEditedData((prev: any) => ({
+      ...prev,
+      [parent]: {
+        ...prev[parent],
+        [field]: value
+      }
+    }));
   };
 
   return (
@@ -67,7 +84,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="bg-white h-full w-full max-w-3xl flex flex-col pointer-events-auto overflow-hidden border-l border-outline-variant/10 shadow-2xl"
+              className="bg-white h-full w-full max-w-5xl flex flex-col pointer-events-auto overflow-hidden border-l border-outline-variant/10 shadow-2xl"
             >
               {/* Header */}
               <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between shrink-0 bg-white sticky top-0 z-10">
@@ -186,48 +203,82 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                     </button>
                   </div>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-70">
-                    <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer group">
-                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary shadow-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-all group border border-transparent focus-within:border-primary/20">
+                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary shadow-sm shrink-0">
                         <span className="material-symbols-outlined">link</span>
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h4 className="text-[11px] font-bold text-primary">Raw Footage (Drive)</h4>
-                        <p className="text-[9px] text-on-surface-variant font-medium">Link por definir...</p>
+                        <input 
+                          type="text"
+                          value={editedData.resources?.drive || ""}
+                          onChange={(e) => handleNestedChange("resources", "drive", e.target.value)}
+                          placeholder="Pega el link aquí..."
+                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/30"
+                        />
                       </div>
                     </div>
                     
-                    <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer group">
-                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary shadow-sm">
+                    <div className="bg-surface-container-low rounded-xl p-4 flex items-center gap-4 hover:shadow-md transition-all group border border-transparent focus-within:border-primary/20">
+                      <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary shadow-sm shrink-0">
                         <span className="material-symbols-outlined">check_circle</span>
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <h4 className="text-[11px] font-bold text-primary">Export Final</h4>
-                        <p className="text-[9px] text-on-surface-variant font-medium">Link por definir...</p>
+                        <input 
+                          type="text"
+                          value={editedData.resources?.export || ""}
+                          onChange={(e) => handleNestedChange("resources", "export", e.target.value)}
+                          placeholder="Pega el link del export..."
+                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/30"
+                        />
                       </div>
                     </div>
                   </div>
                 </section>
 
                 {/* Inspiration Section */}
-                <section className="pb-4">
+                <section className="pb-8">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="material-symbols-outlined text-xl text-primary">auto_awesome</span>
                     <h3 className="text-lg font-headline font-bold text-primary">Inspiración</h3>
                   </div>
                   
-                  <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-3 shadow-sm flex items-start gap-3 hover:border-outline-variant transition-colors cursor-pointer">
-                    <div className="w-12 h-16 bg-slate-900 rounded-lg shrink-0 overflow-hidden relative group">
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="material-symbols-outlined text-white text-base">play_arrow</span>
+                  <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-outline-variant transition-colors focus-within:border-primary/30">
+                    <div className="w-16 h-24 bg-slate-900 rounded-lg shrink-0 overflow-hidden relative group">
+                      <img src={editedData.inspiration?.imageUrl} className="w-full h-full object-cover" alt="Inspiration" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="material-symbols-outlined text-white text-base">image</span>
                       </div>
-                      <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=300&fit=crop" className="w-full h-full object-cover" alt="Inspiration" />
                     </div>
-                    <div className="flex-1 py-0.5">
-                      <h4 className="text-[8px] font-bold uppercase tracking-widest text-outline mb-0.5">Referencia 01</h4>
-                      <p className="text-[11px] font-bold text-primary leading-tight line-clamp-2">Estilo de cortes rápidos y tipografía cinética agresiva.</p>
-                      <div className="mt-2 flex items-center gap-1 text-[10px] font-bold text-[#ff0050]">
-                         <span className="material-symbols-outlined text-[12px]">open_in_new</span> Ver en TikTok
+                    <div className="flex-1 space-y-2">
+                      <div className="flex flex-col">
+                        <input 
+                          type="text"
+                          value={editedData.inspiration?.title || ""}
+                          onChange={(e) => handleNestedChange("inspiration", "title", e.target.value)}
+                          placeholder="Título de referencia..."
+                          className="text-[9px] font-bold uppercase tracking-widest text-outline bg-transparent border-none focus:ring-0 p-0"
+                        />
+                        <textarea 
+                          value={editedData.inspiration?.description || ""}
+                          onChange={(e) => handleNestedChange("inspiration", "description", e.target.value)}
+                          placeholder="Describe el estilo o referencia..."
+                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[11px] font-medium text-primary leading-tight mt-1 resize-none"
+                          rows={2}
+                        />
+                      </div>
+                      
+                      <div className="pt-2 border-t border-outline-variant/10 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[14px] text-[#ff0050]">link</span>
+                        <input 
+                          type="text"
+                          value={editedData.inspiration?.url || ""}
+                          onChange={(e) => handleNestedChange("inspiration", "url", e.target.value)}
+                          placeholder="Link de TikTok / Referencia"
+                          className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-[10px] font-bold text-[#ff0050] placeholder:text-[#ff0050]/20"
+                        />
                       </div>
                     </div>
                   </div>
