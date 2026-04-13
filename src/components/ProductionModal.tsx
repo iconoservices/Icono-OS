@@ -14,6 +14,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
   const { updateContent } = useProject();
   const [editedData, setEditedData] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFetchingThumbnail, setIsFetchingThumbnail] = useState(false);
 
   // Initialize local state when modal opens with new data
   useEffect(() => {
@@ -35,6 +36,38 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
       });
     }
   }, [eventData]);
+
+  // Auto-fetch thumbnail when link changes
+  useEffect(() => {
+    const url = editedData?.inspiration?.url;
+    if (!url || !url.startsWith("http")) return;
+
+    // Simple debounce/check to avoid too many requests
+    const timer = setTimeout(async () => {
+      if (url.includes("tiktok.com") || url.includes("youtube.com") || url.includes("youtu.be")) {
+        setIsFetchingThumbnail(true);
+        try {
+          const res = await fetch(`/api/proxy/oembed?url=${encodeURIComponent(url)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.thumbnail_url) {
+              handleNestedChange("inspiration", "imageUrl", data.thumbnail_url);
+              // Also update title if empty
+              if (!editedData.inspiration.description) {
+                handleNestedChange("inspiration", "description", data.title || "");
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching thumbnail:", error);
+        } finally {
+          setIsFetchingThumbnail(false);
+        }
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [editedData?.inspiration?.url]);
 
   if (!eventData || !editedData) return null;
 
@@ -246,8 +279,17 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                   </div>
                   
                   <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-4 shadow-sm flex items-start gap-4 hover:border-outline-variant transition-colors focus-within:border-primary/30">
-                    <div className="w-16 h-24 bg-slate-900 rounded-lg shrink-0 overflow-hidden relative group">
-                      <img src={editedData.inspiration?.imageUrl} className="w-full h-full object-cover" alt="Inspiration" />
+                    <div className="w-16 h-24 bg-slate-900 rounded-lg shrink-0 overflow-hidden relative group border border-outline-variant/10 shadow-inner">
+                      {isFetchingThumbnail && (
+                        <div className="absolute inset-0 z-20 bg-primary/20 backdrop-blur-[2px] flex items-center justify-center">
+                          <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                      <img 
+                        src={editedData.inspiration?.imageUrl} 
+                        className={`w-full h-full object-cover transition-all duration-500 ${isFetchingThumbnail ? 'blur-sm scale-110' : 'blur-0 scale-100'}`} 
+                        alt="Inspiration" 
+                      />
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <span className="material-symbols-outlined text-white text-base">image</span>
                       </div>
