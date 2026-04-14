@@ -132,11 +132,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   // CRUD for Contents
   const addContent = async (content: any) => {
     const id = content.id?.toString() || Date.now().toString();
-    await setDoc(doc(db, "contents", id), content);
+    const sanitized = JSON.parse(JSON.stringify(content)); // strip undefined
+    await setDoc(doc(db, "contents", id), sanitized);
   };
 
   const updateContent = async (id: string, updates: any) => {
-    await updateDoc(doc(db, "contents", id), updates);
+    const sanitized = JSON.parse(JSON.stringify(updates)); // strip undefined
+    await setDoc(doc(db, "contents", id), sanitized, { merge: true });
   };
 
   const deleteContent = async (id: string) => {

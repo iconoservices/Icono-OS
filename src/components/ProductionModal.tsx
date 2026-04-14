@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useProject } from "@/context/ProjectContext";
 
 interface Inspiration {
@@ -29,42 +29,48 @@ function InspirationCard({
   onRemove: () => void;
 }) {
   const [isFetching, setIsFetching] = useState(false);
-  const fetchedUrlRef = useRef<string | null>(
-    inspiration.imageUrl !== "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=300&fit=crop" ? inspiration.url : null
-  );
+  const [fetchError, setFetchError] = useState(false);
+  const [lastFetchedUrl, setLastFetchedUrl] = useState("");
+
+  const fetchThumbnail = async (url: string) => {
+    setIsFetching(true);
+    setFetchError(false);
+    try {
+      const res = await fetch(`/api/proxy/oembed?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setLastFetchedUrl(url);
+        if (data.thumbnail_url) {
+          onUpdate({ 
+            imageUrl: data.thumbnail_url,
+            description: inspiration.description || data.title || ""
+          });
+        }
+      } else {
+        setFetchError(true);
+      }
+    } catch (error) {
+      console.error("Error fetching thumbnail:", error);
+      setFetchError(true);
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   useEffect(() => {
-    const url = inspiration.url;
+    const url = inspiration.url?.trim();
     if (!url || !url.startsWith("http")) return;
-    
-    // Prevent refetching if we already fetched for this exact URL
-    if (url === fetchedUrlRef.current) return;
+    if (url === lastFetchedUrl) return;
 
-    const timer = setTimeout(async () => {
-      if (url.includes("tiktok.com") || url.includes("youtube.com") || url.includes("youtu.be")) {
-        setIsFetching(true);
-        try {
-          const res = await fetch(`/api/proxy/oembed?url=${encodeURIComponent(url)}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.thumbnail_url) {
-              fetchedUrlRef.current = url; // Mark as fetched
-              onUpdate({ 
-                imageUrl: data.thumbnail_url,
-                description: inspiration.description || data.title || ""
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching thumbnail:", error);
-        } finally {
-          setIsFetching(false);
-        }
-      }
-    }, 1000);
+    const isSupported = url.includes("tiktok.com") || url.includes("youtube.com") || url.includes("youtu.be");
+    if (!isSupported) return;
 
+    const timer = setTimeout(() => fetchThumbnail(url), 1000);
     return () => clearTimeout(timer);
-  }, [inspiration.url]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspiration.url, lastFetchedUrl]);
+
+  const hasImage = !!(inspiration.imageUrl && inspiration.imageUrl.length > 0);
 
   return (
     <div className="bg-surface-container-lowest border border-outline-variant/5 rounded-xl p-3 flex flex-col gap-3 focus-within:border-primary/20 transition-all relative group/card">
@@ -82,11 +88,20 @@ function InspirationCard({
               <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
             </div>
           )}
-          <img 
-            src={inspiration.imageUrl || "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=300&fit=crop"} 
-            className={`w-full h-full object-cover transition-all duration-500 ${isFetching ? 'blur-sm scale-110' : 'blur-0 scale-100'}`} 
-            alt="Inspiration" 
-          />
+          {hasImage ? (
+            <img 
+              src={inspiration.imageUrl} 
+              className={`w-full h-full object-cover transition-all duration-500 ${isFetching ? 'blur-sm scale-110' : 'blur-0 scale-100'}`} 
+              alt="Inspiration" 
+            />
+          ) : (
+            <div className={`w-full h-full flex flex-col items-center justify-center text-outline-variant/20 ${isFetching ? 'animate-pulse bg-primary/5' : ''}`}>
+              <span className="material-symbols-outlined text-[24px]">
+                {fetchError ? 'error_outline' : (isFetching ? 'downloading' : 'image')}
+              </span>
+              {fetchError && <span className="text-[7px] font-bold uppercase mt-1">Error</span>}
+            </div>
+          )}
         </div>
         <div className="flex-1 flex flex-col">
           <input 
@@ -120,7 +135,7 @@ function InspirationCard({
 }
 
 export default function ProductionModal({ isOpen, onClose, eventData }: ProductionModalProps) {
-  const { updateContent, deleteContent, projects, allProjectCampaigns } = useProject();
+  const { addContent, updateContent, deleteContent, projects, allProjectCampaigns } = useProject();
   const [editedData, setEditedData] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -132,15 +147,6 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
       let formattedInspirations = eventData.inspirations || [];
       if (formattedInspirations.length === 0 && eventData.inspiration) {
         formattedInspirations = [{ ...eventData.inspiration, id: 'init-1' }];
-      }
-      if (formattedInspirations.length === 0) {
-        formattedInspirations = [{
-          id: 'default-1',
-          title: "Referencia 01", 
-          description: "Estilo de cortes rápidos y tipografía cinética agresiva.",
-          url: "",
-          imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=300&fit=crop"
-        }];
       }
 
       setEditedData({
@@ -160,9 +166,21 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
   if (!eventData || !editedData) return null;
 
   const handleSave = async () => {
+    if (!editedData || isSaving) return;
     setIsSaving(true);
     try {
-      await updateContent(editedData.id, editedData);
+      const dataToSave = {
+        ...editedData,
+        id: editedData.id || `content_${Date.now()}`
+      };
+      
+      if (editedData.isDraft || editedData.isNew) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { isDraft, isNew, ...rest } = dataToSave;
+        await addContent(rest);
+      } else {
+        await updateContent(dataToSave.id, dataToSave);
+      }
       onClose();
     } catch (error) {
       console.error("Error saving piece:", error);
@@ -204,7 +222,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
       title: `Referencia ${editedData.inspirations.length + 1}`,
       description: "",
       url: "",
-      imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=200&h=300&fit=crop"
+      imageUrl: ""
     };
     setEditedData((prev: any) => ({
       ...prev,
