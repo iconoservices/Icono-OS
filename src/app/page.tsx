@@ -642,7 +642,22 @@ export default function Dashboard() {
                             <div 
                               key={`strat-${i}`} 
                               className={`group relative p-2.5 rounded-xl border border-outline-variant/10 transition-all cursor-pointer overflow-hidden ${matchingEvents.length > 0 ? 'bg-white dark:bg-slate-900 shadow-sm hover:shadow-md' : 'bg-surface-container-low/30 border-dashed opacity-60 hover:opacity-100 hover:bg-surface-container-low/50'}`}
-                              onClick={() => matchingEvents.length > 0 ? setSelectedEvent(matchingEvents[0]) : handleAddActionToSlot(dayName, action.colId, action.campaignId)}
+                              onClick={() => {
+                                if (matchingEvents.length > 0) {
+                                  setSelectedEvent(matchingEvents[0]);
+                                } else {
+                                  setActiveMatrixSlot({ 
+                                    campaignId: action.campaignId, 
+                                    actionId: action.actionId,
+                                    day: dayName, 
+                                    colId: action.colId, 
+                                    text: action.strategy, 
+                                    time: action.time,
+                                    color: action.color 
+                                  }); 
+                                  setIsRightPanelOpen(true);
+                                }
+                              }}
                             >
                               <div className="mb-1.5">
                                 <span className={`px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest ${action.color} bg-surface-container-low border border-outline-variant/5`}>
