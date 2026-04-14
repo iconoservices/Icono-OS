@@ -5,9 +5,9 @@ const clients = [
     name: "Luminary Wellness",
     desc: "Estrategia de Contenido y Anuncios TikTok",
     color: "bg-[#ff0050]",
-    fee: "$12,500",
-    cost: "$4,200",
-    margin: "+$8,300",
+    fee: "S/ 12,500",
+    cost: "S/ 4,200",
+    margin: "+S/ 8,300",
     marginPercent: "66.4%",
     status: "ÓPTIMO",
     statusColor: "emerald"
@@ -16,9 +16,9 @@ const clients = [
     name: "Apex Dynamics",
     desc: "Gestión Integral de Canales",
     color: "bg-[#1877f2]",
-    fee: "$8,000",
-    cost: "$7,100",
-    margin: "+$900",
+    fee: "S/ 8,000",
+    cost: "S/ 7,100",
+    margin: "+S/ 900",
     marginPercent: "11.2%",
     status: "CRÍTICO",
     statusColor: "error"
@@ -27,9 +27,9 @@ const clients = [
     name: "Velvet & Vine",
     desc: "Curaduría Editorial y Estética",
     color: "bg-[#e4405f]",
-    fee: "$15,000",
-    cost: "$8,450",
-    margin: "+$6,550",
+    fee: "S/ 15,000",
+    cost: "S/ 8,450",
+    margin: "+S/ 6,550",
     marginPercent: "43.6%",
     status: "ESTABLE",
     statusColor: "secondary"
@@ -61,7 +61,7 @@ export default function Finance() {
           </div>
           <div className="relative z-10">
             <div className="text-xs font-bold text-outline uppercase tracking-widest mb-4">Ingreso Mensual Total</div>
-            <div className="text-4xl font-headline font-extrabold text-primary mb-2">$84,200</div>
+            <div className="text-4xl font-headline font-extrabold text-primary mb-2">S/ 84,200</div>
             <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
               <span className="material-symbols-outlined text-sm">trending_up</span>
               <span>+12.4% vs mes anterior</span>
@@ -91,7 +91,7 @@ export default function Finance() {
           </div>
           <div className="relative z-10">
             <div className="text-xs font-bold text-outline uppercase tracking-widest mb-4">Tarifa por Hora por Cliente</div>
-            <div className="text-4xl font-headline font-extrabold text-primary mb-2">$204 <span className="text-lg font-medium text-outline">prom</span></div>
+            <div className="text-4xl font-headline font-extrabold text-primary mb-2">S/ 204 <span className="text-lg font-medium text-outline">prom</span></div>
             <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
               <span className="material-symbols-outlined text-sm">stars</span>
               <span>Umbral optimizado alcanzado</span>
@@ -208,7 +208,7 @@ export default function Finance() {
           </div>
           <div className="relative z-10">
             <h3 className="text-lg font-headline font-extrabold mb-2 text-white">Cálculo de Capacidad</h3>
-            <p className="text-primary-fixed-dim text-sm mb-6 max-w-xs">Tu equipo se encuentra actualmente a un 88% de capacidad facturable. Hay espacio para un proyecto más de Alta Velocidad (Tier $10k+).</p>
+            <p className="text-primary-fixed-dim text-sm mb-6 max-w-xs">Tu equipo se encuentra actualmente a un 88% de capacidad facturable. Hay espacio para un proyecto más de Alta Velocidad (Tier S/ 10k+).</p>
             <div className="flex items-center gap-6">
               <div>
                 <div className="text-2xl font-extrabold">24.5</div>

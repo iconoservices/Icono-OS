@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calendarEvents, projectCampaigns, SUGGESTED_DATES } from "@/data/mock";
+import { PROJECT_OKRS, getOKRProgress, getKRProgress, statusConfig } from "@/data/kpis";
 import ProductionModal from "@/components/ProductionModal";
 import { useProject } from "@/context/ProjectContext";
 
@@ -53,7 +54,7 @@ export default function Dashboard() {
   
   // Editable Data States
   const [activeMatrixSlot, setActiveMatrixSlot] = useState<{ campaignId: string, actionId: string, day: string, colId: string, text: string, time?: string, color: string } | null>(null);
-  const [rightPanelTab, setRightPanelTab] = useState<"tareas" | "hitos" | "plan">("tareas");
+  const [rightPanelTab, setRightPanelTab] = useState<"tareas" | "hitos" | "plan" | "metas">("tareas");
   const [planClientFilter, setPlanClientFilter] = useState<string | null>(null);
   
   
@@ -529,45 +530,128 @@ export default function Dashboard() {
               </div>
             </div>
           ) : view === 'yearly' ? (
-            /* YEARLY VIEW - MACRO STRATEGY GRID */
-            <div className="pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((month, mIdx) => (
-                  <div key={month} className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-5 shadow-sm hover:shadow-md transition-all group">
-                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-outline-variant/5">
-                      <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter">{month}</h4>
-                      <span className="text-[10px] font-bold text-slate-400">2024</span>
-                    </div>
-                    
-                    {/* Simplified Macro View: Show Campaign Intensity */}
-                    <div className="space-y-3">
-                      {(allProjectCampaigns[currentProject?.id || '2'] || []).map((camp, cIdx) => (
-                        <div key={cIdx} className="space-y-1">
-                          <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-slate-400">
-                            <span>{camp.name}</span>
-                            <span className={mIdx === 9 ? 'text-primary' : ''}>{mIdx === 9 ? 'Activa' : ''}</span>
+            /* YEARLY VIEW — OKR QUARTERLY STRATEGY */
+            <div className="pb-12 animate-in fade-in slide-in-from-bottom-4 duration-700 space-y-4">
+              {/* Header strip */}
+              <div className="flex items-center justify-between px-1">
+                <div>
+                  <h3 className="text-base font-extrabold text-primary">Plan Anual {year}</h3>
+                  <p className="text-xs text-outline font-medium mt-0.5">Objetivos por trimestre · {currentProject?.name || "Todos los proyectos"}</p>
+                </div>
+                <a href="/performance" className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-outline-variant/20 text-xs font-bold text-on-surface-variant hover:text-primary hover:border-primary/30 transition-all">
+                  <span className="material-symbols-outlined text-sm">monitoring</span>
+                  Ver detalle completo
+                </a>
+              </div>
+
+              {/* 4 quarters */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {[
+                  { q: "Q1", label: "Ene — Mar", months: ["Enero","Febrero","Marzo"],       monthIdxs: [0,1,2]   },
+                  { q: "Q2", label: "Abr — Jun", months: ["Abril","Mayo","Junio"],           monthIdxs: [3,4,5]   },
+                  { q: "Q3", label: "Jul — Sep", months: ["Julio","Agosto","Septiembre"],    monthIdxs: [6,7,8]   },
+                  { q: "Q4", label: "Oct — Dic", months: ["Octubre","Noviembre","Diciembre"],monthIdxs: [9,10,11] },
+                ].map(({ q, label, months, monthIdxs }) => {
+                  const pid = currentProject?.id || "2";
+                  // Find OKR for this quarter
+                  const quarterLabel = `${q} ${year}`;
+                  const okr = (PROJECT_OKRS[pid] || []).find(o => o.quarter === quarterLabel);
+                  const progress = okr ? getOKRProgress(okr) : null;
+                  const sc = okr ? statusConfig(okr.status) : null;
+                  const isCurrentQ = (() => {
+                    const m = new Date().getMonth();
+                    if (q === "Q1") return m <= 2;
+                    if (q === "Q2") return m >= 3 && m <= 5;
+                    if (q === "Q3") return m >= 6 && m <= 8;
+                    return m >= 9;
+                  })();
+
+                  return (
+                    <div key={q} className={`bg-surface-container-lowest rounded-2xl border-2 p-5 shadow-sm hover:shadow-md transition-all flex flex-col gap-4 ${isCurrentQ ? "border-primary/20 shadow-primary/5" : "border-outline-variant/10"}`}>
+                      {/* Quarter header */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`text-xs font-black px-2 py-0.5 rounded-full ${isCurrentQ ? "bg-primary text-white" : "bg-surface-container-low text-outline"}`}>{q}</span>
+                            {isCurrentQ && <span className="text-[8px] font-black text-primary uppercase tracking-widest">Actual</span>}
                           </div>
-                          <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <motion.div 
+                          <p className="text-[10px] font-bold text-outline">{label}</p>
+                        </div>
+                        {progress !== null && (
+                          <span className="text-xl font-black text-primary">{progress}%</span>
+                        )}
+                      </div>
+
+                      {/* OKR block (if exists) */}
+                      {okr && sc ? (
+                        <div className="bg-surface-container-low/60 rounded-xl p-3 space-y-2">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />
+                            <span className={`text-[8px] font-black uppercase tracking-wider ${sc.text}`}>{sc.label}</span>
+                          </div>
+                          <p className="text-[10px] font-bold text-primary leading-snug line-clamp-3">{okr.objective}</p>
+                          {/* KR progress bars */}
+                          <div className="space-y-1.5 pt-1">
+                            {okr.keyResults.map(kr => {
+                              const pct = getKRProgress(kr);
+                              return (
+                                <div key={kr.id}>
+                                  <div className="flex items-center justify-between mb-0.5">
+                                    <span className="text-[8px] font-medium text-on-surface-variant truncate pr-1">{kr.metric}</span>
+                                    <span className="text-[8px] font-black text-primary shrink-0">{pct}%</span>
+                                  </div>
+                                  <div className="h-1 bg-outline-variant/10 rounded-full overflow-hidden">
+                                    <motion.div
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${pct}%` }}
+                                      transition={{ duration: 0.7, ease: "easeOut" }}
+                                      className={`h-full rounded-full ${pct >= 100 ? "bg-emerald-500" : okr.status === "at-risk" ? "bg-red-400" : "bg-primary"}`}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {/* Overall bar */}
+                          <div className="h-1.5 w-full bg-outline-variant/10 rounded-full overflow-hidden mt-1">
+                            <motion.div
                               initial={{ width: 0 }}
-                              animate={{ width: mIdx === 9 ? '85%' : (mIdx < 9 ? '100%' : '15%') }}
-                              className={`h-full rounded-full ${camp.id === 'base_2' ? 'bg-primary' : 'bg-amber-400'}`}
-                            ></motion.div>
+                              animate={{ width: `${progress}%` }}
+                              transition={{ duration: 0.9, ease: "easeOut" }}
+                              className={`h-full rounded-full ${okr.status === "achieved" ? "bg-primary" : okr.status === "on-track" ? "bg-emerald-500" : "bg-red-400"}`}
+                            />
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center py-4 border-2 border-dashed border-outline-variant/20 rounded-xl text-center">
+                          <span className="material-symbols-outlined text-xl text-outline-variant/30 mb-1">track_changes</span>
+                          <p className="text-[9px] font-bold text-outline/50">Sin OKR definido</p>
+                        </div>
+                      )}
 
-                    <div className="mt-6 pt-4 border-t border-outline-variant/5 flex items-center justify-between">
-                      <div className="flex -space-x-1.5">
-                        <div className="w-5 h-5 rounded-full bg-[#FE2C55] border-2 border-white dark:border-slate-800"></div>
-                        <div className="w-5 h-5 rounded-full bg-[#E4405F] border-2 border-white dark:border-slate-800"></div>
-                        <div className="w-5 h-5 rounded-full bg-[#1877F2] border-2 border-white dark:border-slate-800"></div>
+                      {/* Campaign activity intensity per month */}
+                      <div className="space-y-1">
+                        <p className="text-[8px] font-bold text-outline uppercase tracking-widest">Actividad de Campañas</p>
+                        {months.map((month, i) => {
+                          const mIdx = monthIdxs[i];
+                          return (
+                            <div key={month} className="flex items-center gap-2">
+                              <span className="text-[8px] font-bold text-outline w-8 shrink-0">{month.slice(0,3)}</span>
+                              <div className="flex-1 h-1.5 bg-outline-variant/10 rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: mIdx < new Date().getMonth() ? "100%" : mIdx === new Date().getMonth() ? "60%" : "0%" }}
+                                  transition={{ duration: 0.6, delay: i * 0.1 }}
+                                  className="h-full bg-primary/60 rounded-full"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Macro-Plan</span>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -861,11 +945,11 @@ export default function Dashboard() {
                 <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
                   {/* 3-Tab Nav */}
                   <div className="flex bg-surface-container-high/50 p-1 rounded-xl border border-outline-variant/10 mb-5 shrink-0">
-                    {([['tareas','Tareas'],['plan','Plan'],['hitos','Suger.']] as const).map(([tab, label]) => (
+                    {([['tareas','Tareas'],['plan','Plan'],['hitos','Suger.'],['metas','Metas']] as const).map(([tab, label]) => (
                       <button
                         key={tab}
                         onClick={() => setRightPanelTab(tab)}
-                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative ${
+                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all relative ${
                           rightPanelTab === tab ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'
                         }`}
                       >
@@ -1081,6 +1165,76 @@ export default function Dashboard() {
                                     <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-widest">{proj.name}</span>
                                   </div>
                                 )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* ---- METAS TAB (OKRs compactos) ---- */}
+                  {rightPanelTab === 'metas' && (() => {
+                    const pid = currentProject?.id || '2';
+                    const okrs = PROJECT_OKRS[pid] || [];
+                    return (
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        <div className="flex items-center justify-between mb-3 shrink-0">
+                          <div>
+                            <h3 className="text-lg font-extrabold tracking-tight font-headline">Metas</h3>
+                            <p className="text-xs text-on-surface-variant font-medium">OKRs del proyecto activo</p>
+                          </div>
+                          <a href="/performance" className="p-1.5 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-colors" title="Ver detalle completo">
+                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                          </a>
+                        </div>
+                        <div className="space-y-4 flex-1 overflow-y-auto no-scrollbar pb-4">
+                          {okrs.length === 0 && (
+                            <div className="text-center p-8 border-2 border-dashed border-outline-variant/30 rounded-2xl">
+                              <span className="material-symbols-outlined text-3xl text-outline-variant/40 mb-2 block">track_changes</span>
+                              <p className="text-xs text-on-surface-variant">Sin OKRs registrados aún.</p>
+                            </div>
+                          )}
+                          {okrs.map(okr => {
+                            const progress = getOKRProgress(okr);
+                            const sc = statusConfig(okr.status);
+                            return (
+                              <div key={okr.id} className="bg-white rounded-2xl p-4 border border-outline-variant/10 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${sc.bg} ${sc.text} flex items-center gap-1`}>
+                                    <span className={`w-1 h-1 rounded-full ${sc.dot}`} />{sc.label}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-outline">{okr.quarter}</span>
+                                  <span className="ml-auto text-xs font-black text-primary">{progress}%</span>
+                                </div>
+                                <p className="text-[11px] font-bold text-primary leading-snug mb-3 line-clamp-2">{okr.objective}</p>
+                                {/* Overall bar */}
+                                <div className="h-1.5 w-full bg-outline-variant/10 rounded-full overflow-hidden mb-3">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${okr.status === 'achieved' ? 'bg-primary' : okr.status === 'on-track' ? 'bg-emerald-500' : 'bg-red-400'}`}
+                                    style={{ width: `${progress}%` }}
+                                  />
+                                </div>
+                                {/* Key Results compact */}
+                                <div className="space-y-1.5">
+                                  {okr.keyResults.map(kr => {
+                                    const pct = getKRProgress(kr);
+                                    return (
+                                      <div key={kr.id} className="flex items-center gap-2">
+                                        <span className={`w-3 h-3 rounded-full shrink-0 flex items-center justify-center ${pct >= 100 ? 'bg-emerald-100' : 'bg-outline-variant/10'}`}>
+                                          {pct >= 100 && <span className="material-symbols-outlined text-[8px] text-emerald-600">check</span>}
+                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-[9px] font-medium text-on-surface-variant truncate">{kr.metric}</div>
+                                          <div className="h-1 bg-outline-variant/10 rounded-full overflow-hidden mt-0.5">
+                                            <div className="h-full bg-primary/60 rounded-full" style={{ width: `${pct}%` }} />
+                                          </div>
+                                        </div>
+                                        <span className="text-[9px] font-black text-primary shrink-0">{pct}%</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             );
                           })}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useProject } from "@/context/ProjectContext";
 import { projectCampaigns } from "@/data/mock";
@@ -11,6 +11,43 @@ export default function Sidebar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { projects, currentProject, setCurrentProject, hiddenCampaignIds, toggleCampaignVisibility, allProjectCampaigns, deleteCampaign } = useProject();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [projectOrder, setProjectOrder] = useState<string[]>([]);
+
+  // Sync order with localStorage (same key as Projects page)
+  useEffect(() => {
+    const load = () => {
+      const saved = localStorage.getItem("mrk-project-order");
+      if (saved) setProjectOrder(JSON.parse(saved));
+    };
+    load();
+    window.addEventListener("storage", load);
+    window.addEventListener("project-order-changed", load);
+    return () => {
+      window.removeEventListener("storage", load);
+      window.removeEventListener("project-order-changed", load);
+    };
+  }, []);
+
+  // Keep order in sync when projects list changes from Firestore
+  useEffect(() => {
+    if (projects.length === 0) return;
+    const saved = localStorage.getItem("mrk-project-order");
+    if (saved) {
+      const parsed: string[] = JSON.parse(saved);
+      const existingIds = projects.map((p) => p.id);
+      const merged = [
+        ...parsed.filter((id) => existingIds.includes(id)),
+        ...existingIds.filter((id) => !parsed.includes(id)),
+      ];
+      setProjectOrder(merged);
+    } else {
+      setProjectOrder(projects.map((p) => p.id));
+    }
+  }, [projects]);
+
+  const sortedProjects = projectOrder.length > 0
+    ? projectOrder.map((id) => projects.find((p) => p.id === id)).filter(Boolean) as typeof projects
+    : projects;
 
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -90,7 +127,7 @@ export default function Sidebar() {
                   </div>
                 </div>
 
-                {projects.map((proj) => (
+                {sortedProjects.map((proj) => (
                   <div 
                     key={proj.id}
                     onClick={() => {
@@ -136,6 +173,10 @@ export default function Sidebar() {
         <Link href="/finance" className={`flex items-center gap-3 py-2.5 rounded-xl transition-colors hover:bg-slate-200/50 text-slate-500 font-medium ${isOpen ? 'px-3' : 'justify-center'}`} title="Finanzas">
           <span className="material-symbols-outlined">payments</span>
           {isOpen && <span className="text-sm whitespace-nowrap overflow-hidden">Finanzas</span>}
+        </Link>
+        <Link href="/performance" className={`flex items-center gap-3 py-2.5 rounded-xl transition-colors hover:bg-slate-200/50 text-slate-500 font-medium ${isOpen ? 'px-3' : 'justify-center'}`} title="Rendimiento">
+          <span className="material-symbols-outlined">monitoring</span>
+          {isOpen && <span className="text-sm whitespace-nowrap overflow-hidden">Rendimiento</span>}
         </Link>
         <Link href="/settings" className={`flex items-center gap-3 py-2.5 rounded-xl transition-colors hover:bg-slate-200/50 text-slate-500 font-medium ${isOpen ? 'px-3' : 'justify-center'}`} title="Ajustes">
           <span className="material-symbols-outlined">settings</span>
