@@ -133,45 +133,39 @@ export default function CalendarPage() {
                     const matchingEvents = dayEvents.filter(e => e.matrixSlot?.colId === action.colId || e.type?.toLowerCase() === action.colId);
                     matchingEvents.forEach(e => matchedEventIds.add(e.id));
                     
+                    const colName = { prod: 'Producción', tiktok: 'TikTok', ig: 'Instagram', fb: 'Facebook', stories: 'Meta Stories' }[action.colId as string] || action.colId;
+
                     return (
-                      <div key={`strat-${i}`} className="space-y-1.5">
-                        {matchingEvents.length > 0 ? (
-                          matchingEvents.map(event => (
-                            <div 
-                              key={event.id}
-                              onClick={() => setSelectedEvent(event)}
-                              className={`group relative px-2 py-1.5 rounded-xl border border-outline-variant/10 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${event.color || 'bg-surface-container-low'}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className={`text-[8px] font-extrabold uppercase tracking-tighter ${event.iconColor || 'text-on-surface'}`}>
-                                  {currentProject === null ? (projects.find(p => p.id === event.projectId)?.name || event.type) : event.type}
-                                </span>
-                                <span className="material-symbols-outlined text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
-                              </div>
-                              <h4 className="text-[10px] font-bold leading-snug text-on-surface mt-0.5">{event.title}</h4>
-                              <p className="text-[8px] font-bold text-slate-500/70 line-clamp-1 leading-tight select-none mt-0.5 italic">{action.strategy}</p>
-                              
-                              {currentProject === null && (
-                                <div className="flex items-center gap-1 mt-1">
-                                  <div className={`w-1 h-1 rounded-full ${projects.find(p => p.id === event.projectId)?.accent.replace('bg-', 'bg-') || 'bg-primary'}`}></div>
-                                  <span className="text-[8px] font-bold text-on-surface-variant uppercase truncate">{projects.find(p => p.id === event.projectId)?.name}</span>
-                                </div>
-                              )}
-                              {event.time && (
-                                <div className="flex items-center gap-1 mt-1 text-[8px] font-bold text-on-surface-variant/70 uppercase">
-                                  <span className="material-symbols-outlined text-[10px]">schedule</span> {event.time}
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-2 py-1.5 rounded-xl border border-dashed border-outline-variant/30 bg-surface-container-low/20 opacity-60 flex items-start gap-1.5 group hover:bg-surface-container-low/40 transition-colors cursor-pointer">
-                            <span className={`material-symbols-outlined text-[10px] ${action.color} mt-0.5 opacity-50`}>design_services</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[9px] font-bold text-slate-500 line-clamp-2 leading-tight select-none">{action.strategy}</p>
-                            </div>
+                      <div 
+                        key={`strat-${i}`} 
+                        className={`group relative px-2 py-1.5 rounded-xl border border-outline-variant/10 transition-all cursor-pointer overflow-hidden ${matchingEvents.length > 0 ? 'bg-white dark:bg-slate-900 shadow-sm hover:shadow-md' : 'bg-surface-container-low/30 border-dashed opacity-60 hover:opacity-100 hover:bg-surface-container-low/50'}`}
+                        onClick={() => matchingEvents.length > 0 ? setSelectedEvent(matchingEvents[0]) : null}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${action.color} bg-surface-container-low`}>
+                            {colName}
+                          </span>
+                          <span className="material-symbols-outlined text-[12px] opacity-0 group-hover:opacity-100 transition-opacity text-slate-400">
+                            {matchingEvents.length > 0 ? 'more_vert' : 'add'}
+                          </span>
+                        </div>
+                        <h4 className={`text-[10.5px] font-bold leading-snug mt-1 ${matchingEvents.length > 0 ? 'text-on-surface' : 'text-on-surface-variant'}`}>{action.strategy}</h4>
+                        
+                        {action.time && (
+                          <div className="flex items-center gap-1 mt-1.5 text-[8px] font-bold text-on-surface-variant/70 uppercase">
+                            <span className="material-symbols-outlined text-[10px]">schedule</span> {action.time}
                           </div>
                         )}
+
+                        {matchingEvents.map(event => (
+                          <div key={event.id} className="mt-1.5 flex items-center gap-1.5 py-1 px-1.5 rounded-md border border-outline-variant/10 bg-surface-container-lowest">
+                            {currentProject === null && (
+                              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${projects.find(p => p.id === event.projectId)?.accent.replace('bg-', 'bg-') || 'bg-primary'}`}></div>
+                            )}
+                            <span className={`material-symbols-outlined text-[10px] ${event.iconColor || 'text-primary'}`}>{event.icon || 'post_add'}</span>
+                            <span className="text-[8px] font-bold truncate text-on-surface-variant flex-1">{event.title}</span>
+                          </div>
+                        ))}
                       </div>
                     );
                   })}
