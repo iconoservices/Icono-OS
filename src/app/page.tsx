@@ -643,8 +643,7 @@ export default function Dashboard() {
 
                               {matchingEvents.map(event => (
                                 <div key={event.id} className="mt-1.5 flex items-center gap-1.5 py-1 px-1.5 rounded-md border border-outline-variant/10 bg-surface-container-lowest">
-                                  <span className={`material-symbols-outlined text-[10px] ${event.iconColor || 'text-primary'}`}>{event.icon || 'post_add'}</span>
-                                  <span className="text-[8px] font-bold truncate text-on-surface-variant">{event.title}</span>
+                                  <span className="text-[8.5px] font-extrabold truncate text-on-surface-variant/90">{event.title}</span>
                                 </div>
                               ))}
                             </div>

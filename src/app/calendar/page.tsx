@@ -159,8 +159,7 @@ export default function CalendarPage() {
                             {currentProject === null && (
                               <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${projects.find(p => p.id === event.projectId)?.accent.replace('bg-', 'bg-') || 'bg-primary'}`}></div>
                             )}
-                            <span className={`material-symbols-outlined text-[10px] ${event.iconColor || 'text-primary'}`}>{event.icon || 'post_add'}</span>
-                            <span className="text-[8px] font-bold truncate text-on-surface-variant flex-1">{event.title}</span>
+                            <span className="text-[8.5px] font-extrabold truncate text-on-surface-variant/90 flex-1">{event.title}</span>
                           </div>
                         ))}
                       </div>
