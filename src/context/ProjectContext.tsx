@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Project, projectsData, projectCampaigns, CampaignMatrix } from "@/data/mock";
+import { Project, projectsData, projectCampaigns, CampaignMatrix, calendarEvents } from "@/data/mock";
 import { db } from "@/lib/firebase";
 import { 
   collection, 
@@ -20,7 +20,7 @@ interface ProjectContextType {
   projects: Project[];
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   currentProject: Project | null;
-  setCurrentProject: (project: Project) => void;
+  setCurrentProject: (project: Project | null) => void;
   hiddenCampaignIds: string[];
   toggleCampaignVisibility: (id: string) => void;
   globalContents: any[];
@@ -59,7 +59,8 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         batch.commit();
       } else {
         setProjects(projectsList);
-        if (!currentProject) {
+        // Do not auto-set if already set or if explicitly null
+        if (!currentProject && currentProject !== null) {
           const sunset = projectsList.find(p => p.id === "2") || projectsList[0];
           setCurrentProject(sunset);
         }
@@ -93,7 +94,17 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     // Listen to Contents (Calendar Events)
     const unsubContents = onSnapshot(collection(db, "contents"), (snapshot) => {
       const contentsList = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      setGlobalContents(contentsList);
+      
+      if (contentsList.length === 0) {
+        const batch = writeBatch(db);
+        calendarEvents.forEach((c, idx) => {
+          const docId = `mock_event_${idx}`;
+          batch.set(doc(db, "contents", docId), { ...c, id: docId });
+        });
+        batch.commit();
+      } else {
+        setGlobalContents(contentsList);
+      }
     });
 
     return () => {

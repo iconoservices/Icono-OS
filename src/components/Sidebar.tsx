@@ -42,17 +42,17 @@ export default function Sidebar() {
           }}
           className={`flex items-center gap-3 p-2 rounded-xl transition-colors cursor-pointer hover:bg-slate-200/50 ${isOpen ? '' : 'justify-center'}`}
         >
-          <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 overflow-hidden ${currentProject?.accent || 'ink-gradient'}`}>
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 overflow-hidden ${currentProject?.accent || 'bg-slate-800'}`}>
             {currentProject ? (
               <img src={currentProject.logo} alt={currentProject.name} className="w-full h-full object-cover" />
             ) : (
-              <span className="material-symbols-outlined">dashboard_customize</span>
+              <span className="material-symbols-outlined">public</span>
             )}
           </div>
           {isOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 whitespace-nowrap overflow-hidden">
-              <div className="text-slate-900 dark:text-slate-100 text-sm font-bold truncate">{currentProject?.name || "Selector de Proyectos"}</div>
-              <div className="text-slate-500 text-[10px] uppercase tracking-widest font-semibold truncate">{currentProject?.category || "Gestión Multi-cliente"}</div>
+              <div className="text-slate-900 dark:text-slate-100 text-sm font-bold truncate">{currentProject?.name || "Todos los Proyectos"}</div>
+              <div className="text-slate-500 text-[10px] uppercase tracking-widest font-semibold truncate">{currentProject?.category || "Vista Consolidada"}</div>
             </motion.div>
           )}
           {isOpen && (
@@ -73,6 +73,23 @@ export default function Sidebar() {
                 Portafolio Activo
               </div>
               <div className="max-h-60 overflow-y-auto no-scrollbar">
+                {/* Global View Option */}
+                <div 
+                  onClick={() => {
+                    setCurrentProject(null);
+                    setIsDropdownOpen(false);
+                  }}
+                  className={`flex items-center gap-3 p-3 transition-colors cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 ${currentProject === null ? 'bg-primary/5 dark:bg-primary/10' : ''}`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-white shrink-0">
+                    <span className="material-symbols-outlined text-sm">public</span>
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className={`text-xs font-bold truncate ${currentProject === null ? 'text-primary' : 'text-slate-700 dark:text-slate-200'}`}>Todos los Proyectos</div>
+                    <div className="text-[10px] text-slate-500 truncate">Vista consolidada del calendario</div>
+                  </div>
+                </div>
+
                 {projects.map((proj) => (
                   <div 
                     key={proj.id}

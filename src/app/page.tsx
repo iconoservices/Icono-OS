@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { activeTasks, calendarEvents, projectCampaigns } from "@/data/mock";
+import { activeTasks, calendarEvents, projectCampaigns, SUGGESTED_DATES } from "@/data/mock";
 import ProductionModal from "@/components/ProductionModal";
 import { useProject } from "@/context/ProjectContext";
 
@@ -44,6 +44,8 @@ export default function Dashboard() {
   const [activeMatrixSlot, setActiveMatrixSlot] = useState<{ campaignId: string, actionId: string, day: string, colId: string, text: string, time?: string, color: string } | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [rightPanelTab, setRightPanelTab] = useState<"tareas" | "hitos" | "plan">("tareas");
+  const [planClientFilter, setPlanClientFilter] = useState<string | null>(null);
   
   
   const getNumericDay = (matrixDay: string) => {
@@ -165,6 +167,28 @@ export default function Dashboard() {
     setTasks([newTask, ...tasks]);
     setNewTaskTitle("");
     setIsAddingTask(false);
+  };
+
+  const handleAddFromSuggestion = async (suggestion: any) => {
+    if (!currentProject) return;
+    const newContent = {
+      id: Date.now().toString(),
+      projectId: currentProject.id,
+      campaignId: 'base_2',
+      day: parseInt(suggestion.date.split("-")[2]),
+      month: parseInt(suggestion.date.split("-")[1]) - 1,
+      year: parseInt(suggestion.date.split("-")[0]),
+      type: "ESTRATÉGICO",
+      title: suggestion.title,
+      sourceSuggestionId: suggestion.id,
+      color: "bg-primary/10",
+      iconColor: "text-primary",
+      borderColor: "border-primary",
+      icon: suggestion.icon,
+      matrixSlot: { day: 'Lunes', colId: 'prod' }
+    };
+    await addContent(newContent);
+    setRightPanelTab('plan');
   };
 
   const handleDeleteTask = (id: string) => {
@@ -458,6 +482,14 @@ export default function Dashboard() {
                       e.projectId === currentProject?.id &&
                       !hiddenCampaignIds.includes(e.campaignId)
                     );
+                    
+                    const suggestions = SUGGESTED_DATES.filter(s => {
+                      const sDate = new Date(s.date);
+                      return sDate.getDate() === day && 
+                             sDate.getMonth() === currentDate.getMonth() && 
+                             sDate.getFullYear() === currentDate.getFullYear();
+                    });
+
                     const today = new Date();
                     const isToday = day === today.getDate() && 
                                    currentDate.getMonth() === today.getMonth() && 
@@ -470,6 +502,12 @@ export default function Dashboard() {
                           {isToday && <span className="text-[8px] font-black text-primary uppercase tracking-widest px-1.5 py-0.5 bg-primary/10 rounded-full">Hoy</span>}
                         </div>
                         <div className="mt-2 space-y-2">
+                          {suggestions.map((s) => (
+                            <div key={s.id} className={`flex items-center gap-1.5 p-1.5 rounded-lg border border-dashed border-primary/20 bg-primary/5 group cursor-default`}>
+                              <span className="material-symbols-outlined text-[12px] text-primary">{s.icon}</span>
+                              <span className="text-[9px] font-extrabold text-primary uppercase truncate leading-none">{s.title}</span>
+                            </div>
+                          ))}
                           {events.map((event, idx) => (
                             <div key={idx} onClick={() => setSelectedEvent(event)} className={`flex items-center gap-2 p-2 rounded-lg ${event.color} border-l-4 ${event.borderColor} group cursor-pointer transition-all hover:scale-[1.02]`}>
                               <span className={`material-symbols-outlined text-[16px] ${event.iconColor}`}>{event.icon}</span>
@@ -535,38 +573,61 @@ export default function Dashboard() {
                 
                 {currentWeekDays.map((date, idx) => {
                   const dayNum = date.getDate();
+                  const dayOfWeek = date.getDay() || 7;
                   const events = globalContents.filter(e => 
-                    e.day === dayNum && 
+                    (e.day === dayNum || e.day === dayOfWeek) && 
                     e.projectId === currentProject?.id &&
                     !hiddenCampaignIds.includes(e.campaignId)
                   );
+
+                  const suggestions = SUGGESTED_DATES.filter(s => {
+                    const sDate = new Date(s.date);
+                    return sDate.getDate() === dayNum && 
+                           sDate.getMonth() === date.getMonth() && 
+                           sDate.getFullYear() === date.getFullYear();
+                  });
+
                   const today = new Date();
                   const isToday = date.getDate() === today.getDate() && 
                                  date.getMonth() === today.getMonth() && 
                                  date.getFullYear() === today.getFullYear();
                   
                   return (
-                    <div key={`week-${idx}`} className={`bg-surface-container-lowest min-h-[500px] p-4 transition-colors hover:bg-surface-container-low ${isToday ? 'bg-primary/[0.03] ring-2 ring-primary ring-inset' : ''}`}>
-                      <div className="flex items-center justify-between mb-4">
-                        <span className={`text-sm font-bold ${isToday ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{dayNum}</span>
-                        {isToday && <span className="text-[9px] font-black text-primary uppercase tracking-widest">HOY</span>}
+                    <div key={`week-${idx}`} className={`bg-surface-container-lowest min-h-0 p-1.5 transition-colors hover:bg-surface-container-low ${isToday ? 'bg-primary/[0.03] ring-2 ring-primary ring-inset' : ''}`}>
+                      <div className="flex items-center justify-between mb-1.5 px-1">
+                        <span className={`text-xs font-bold ${isToday ? 'text-primary' : 'text-slate-700 dark:text-slate-300'}`}>{dayNum}</span>
+                        {isToday && <span className="text-[8px] font-black text-primary uppercase tracking-widest">HOY</span>}
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        {suggestions.map((s) => (
+                          <div key={s.id} className="px-2 py-1.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-[12px] text-primary shrink-0">{s.icon}</span>
+                            <span className="text-[9px] font-black text-primary uppercase tracking-tighter leading-none truncate">{s.title}</span>
+                          </div>
+                        ))}
                         {events.map((event, idx) => (
                           <div 
                             key={idx} 
                             onClick={() => setSelectedEvent(event)}
-                            className={`flex flex-col gap-1 p-3 rounded-xl ${event.color} border-l-4 ${event.borderColor} group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-sm`}
+                            className={`group relative px-2 py-1.5 rounded-xl border border-outline-variant/10 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${event.color || 'bg-surface-container-low'}`}
                           >
-                            <div className="flex items-center gap-2">
-                              <span className={`material-symbols-outlined text-[16px] ${event.iconColor}`}>{event.icon}</span>
-                              <span className="text-xs font-bold truncate">{event.title}</span>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-[8px] font-extrabold uppercase tracking-tighter ${event.iconColor || 'text-on-surface'}`}>
+                                {event.type}
+                              </span>
+                              <span className="material-symbols-outlined text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
                             </div>
-                            <span className="text-[10px] font-semibold text-on-surface-variant/70 uppercase tracking-wider">{event.type}</span>
+                            <h4 className="text-[10px] font-bold leading-snug text-on-surface mt-0.5">{event.title}</h4>
+                            
+                            {event.time && (
+                              <div className="flex items-center gap-1 mt-1 text-[8px] font-bold text-on-surface-variant/70 uppercase">
+                                <span className="material-symbols-outlined text-[10px]">schedule</span> {event.time}
+                              </div>
+                            )}
                           </div>
                         ))}
                         
-                        <div className="opacity-0 group-hover:opacity-100 border-2 border-dashed border-outline-variant/30 rounded-xl p-3 flex items-center justify-center text-outline-variant hover:text-primary hover:border-primary transition-all cursor-pointer">
+                        <div className="opacity-0 group-hover:opacity-100 border border-dashed border-outline-variant/30 rounded-lg py-1 flex items-center justify-center text-outline-variant hover:text-primary hover:border-primary transition-all cursor-pointer">
                           <span className="material-symbols-outlined text-sm">add</span>
                         </div>
                       </div>
@@ -713,92 +774,234 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : (
-                /* DEFAULT TAREAS ACTIVAS UI */
                 <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="mb-8">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-extrabold tracking-tight font-headline">Tareas Activas</h3>
-                      <button 
-                        onClick={() => setIsAddingTask(!isAddingTask)}
-                        className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  {/* 3-Tab Nav */}
+                  <div className="flex bg-surface-container-high/50 p-1 rounded-xl border border-outline-variant/10 mb-5 shrink-0">
+                    {([['tareas','Tareas'],['plan','Plan'],['hitos','Suger.']] as const).map(([tab, label]) => (
+                      <button
+                        key={tab}
+                        onClick={() => setRightPanelTab(tab)}
+                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative ${
+                          rightPanelTab === tab ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'
+                        }`}
                       >
-                        <span className="material-symbols-outlined text-sm">{isAddingTask ? 'close' : 'add'}</span>
+                        {label}
+                        {tab === 'plan' && (() => {
+                          const planCount = globalContents.filter(c => c.type === 'ESTRATÉGICO' && (currentProject ? c.projectId === currentProject.id : true)).length;
+                          return planCount > 0 ? (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[8px] font-black flex items-center justify-center">{planCount}</span>
+                          ) : null;
+                        })()}
                       </button>
+                    ))}
+                  </div>
+
+                  {/* ---- TAREAS TAB ---- */}
+                  {rightPanelTab === 'tareas' && (
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                      <div className="flex items-center justify-between mb-2 shrink-0">
+                        <div>
+                          <h3 className="text-lg font-extrabold tracking-tight font-headline">Tareas Activas</h3>
+                          <p className="text-xs text-on-surface-variant font-medium">Producción del día a día</p>
+                        </div>
+                        <button
+                          onClick={() => setIsAddingTask(!isAddingTask)}
+                          className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-sm">{isAddingTask ? 'close' : 'add'}</span>
+                        </button>
+                      </div>
+                      {isAddingTask && (
+                        <div className="mb-4 animate-in slide-in-from-top-2 duration-200 shrink-0">
+                          <div className="bg-white p-3 rounded-xl shadow-sm border border-primary/20">
+                            <input
+                              type="text"
+                              value={newTaskTitle}
+                              onChange={(e) => setNewTaskTitle(e.target.value)}
+                              onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                              placeholder="¿Qué falta por hacer?"
+                              className="w-full text-xs font-bold border-none focus:ring-0 p-0 mb-3"
+                              autoFocus
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => setIsAddingTask(false)} className="px-3 py-1 text-[10px] font-bold text-outline-variant uppercase">Cancelar</button>
+                              <button onClick={handleAddTask} className="px-3 py-1 text-[10px] font-bold bg-primary text-white rounded-lg uppercase tracking-wider">Guardar</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      <div className="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-4">
+                        {tasks.filter(t => t.projectId === currentProject?.id).map(task => {
+                          const isCompleted = task.status === 'Completada';
+                          const priorityStyle = getPriorityColors(task.priority);
+                          const borderColor = isCompleted ? 'border-transparent' : priorityStyle.split(' ')[0];
+                          const badgeBg = isCompleted ? 'bg-outline-variant/30 text-on-surface-variant' : priorityStyle.split(' ').slice(1).join(' ');
+                          return (
+                            <div key={task.id} className={`${isCompleted ? 'bg-surface-container/50 opacity-60' : 'bg-white shadow-sm hover:shadow-md'} p-4 rounded-xl border-l-4 ${borderColor} transition-all relative group`}>
+                              <button onClick={() => handleDeleteTask(task.id)} className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 text-outline-variant hover:text-error transition-all">
+                                <span className="material-symbols-outlined text-sm">delete</span>
+                              </button>
+                              <label className="flex items-center gap-3 cursor-pointer mb-3">
+                                <input type="checkbox" checked={isCompleted}
+                                  onChange={() => setTasks(tasks.map(t => t.id === task.id ? { ...t, status: isCompleted ? 'Pendiente' : 'Completada' } : t))}
+                                  className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"
+                                />
+                                <span className={`text-sm font-bold leading-tight ${isCompleted ? 'line-through' : ''}`}>{task.title}</span>
+                              </label>
+                              <div className="flex items-center justify-between">
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${badgeBg}`}>{isCompleted ? 'Completada' : `Prioridad ${task.priority}`}</span>
+                                {!isCompleted && <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">event</span>{task.date}</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {tasks.filter(t => t.projectId === currentProject?.id).length === 0 && (
+                          <div className="text-center p-6 border-2 border-dashed border-outline-variant/30 rounded-xl">
+                            <p className="text-xs text-on-surface-variant font-medium">No hay tareas pendientes.</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    
-                    {isAddingTask && (
-                      <div className="mb-4 animate-in slide-in-from-top-2 duration-200">
-                        <div className="bg-white p-3 rounded-xl shadow-sm border border-primary/20">
-                          <input 
-                            type="text"
-                            value={newTaskTitle}
-                            onChange={(e) => setNewTaskTitle(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                            placeholder="¿Qué falta por hacer?"
-                            className="w-full text-xs font-bold border-none focus:ring-0 p-0 mb-3"
-                            autoFocus
-                          />
-                          <div className="flex justify-end gap-2">
-                            <button onClick={() => setIsAddingTask(false)} className="px-3 py-1 text-[10px] font-bold text-outline-variant uppercase">Cancelar</button>
-                            <button onClick={handleAddTask} className="px-3 py-1 text-[10px] font-bold bg-primary text-white rounded-lg uppercase tracking-wider">Guardar</button>
+                  )}
+
+                  {/* ---- SUGERENCIAS TAB (TEMPEST) ---- */}
+                  {rightPanelTab === 'hitos' && (() => {
+                    const acceptedIds = new Set(globalContents.filter(c => c.sourceSuggestionId).map(c => c.sourceSuggestionId));
+                    const upcoming = SUGGESTED_DATES.filter(s => new Date(s.date) >= new Date(new Date().setHours(0,0,0,0)));
+                    return (
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        <div className="mb-4 shrink-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <span className="text-2xl font-black tracking-tighter text-on-surface font-headline leading-none">TE<span className="inline-flex items-center justify-center border border-on-surface text-[9px] w-4 h-4 align-middle mx-0.5 font-bold">MP</span>EST</span>
+                            <div className="flex flex-col">
+                              <h3 className="text-xs font-black uppercase tracking-tight text-on-surface leading-none">Estrategia</h3>
+                              <h3 className="text-xs font-black uppercase tracking-tight text-on-surface leading-none">Sugerida</h3>
+                            </div>
                           </div>
+                          <p className="text-[9px] text-on-surface-variant font-bold uppercase tracking-widest">Próximos hitos — haz clic en + para añadir</p>
+                        </div>
+                        <div className="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-4">
+                          {upcoming.map(s => {
+                            const isAccepted = acceptedIds.has(s.id);
+                            return isAccepted ? (
+                              <div key={s.id} className="flex items-center gap-3 p-3 rounded-2xl bg-surface-container/50 border border-outline-variant/10 opacity-60">
+                                <span className="material-symbols-outlined text-[14px] text-on-surface-variant">{s.icon}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-bold text-on-surface-variant line-through truncate">{s.title}</p>
+                                  <p className="text-[8px] text-primary font-black uppercase tracking-widest">✓ En Plan</p>
+                                </div>
+                                <span className="text-[9px] text-on-surface-variant">{new Date(s.date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}</span>
+                              </div>
+                            ) : (
+                              <div
+                                key={s.id}
+                                onClick={() => handleAddFromSuggestion(s)}
+                                className="bg-[#131722] p-5 rounded-[24px] hover:scale-[1.02] transition-all cursor-pointer group shadow-xl shadow-black/20 border border-white/5"
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest ${
+                                    s.type === 'Feriado' ? 'bg-[#FFD9D9] text-[#E54D4D]' : s.type === 'Marketing' ? 'bg-[#3D0A1D] text-[#FE2C55]' : 'bg-primary/20 text-primary'
+                                  }`}>{s.type}</span>
+                                  <div className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/40 group-hover:text-primary group-hover:border-primary transition-all">
+                                    <span className="material-symbols-outlined text-sm">add</span>
+                                  </div>
+                                </div>
+                                <h4 className="text-sm font-extrabold text-[#E2E8F0] mb-2 leading-tight group-hover:text-primary transition-colors">{s.title}</h4>
+                                <p className="text-[10px] text-[#94A3B8] leading-relaxed mb-4 font-medium line-clamp-2">{s.description}</p>
+                                <div className="flex items-center gap-2 pt-3 border-t border-white/5">
+                                  <span className="material-symbols-outlined text-[16px] text-[#475569]">{s.icon}</span>
+                                  <span className="text-[9px] font-black text-[#475569] uppercase tracking-widest">{new Date(s.date).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    )}
+                    );
+                  })()}
+
+                  {/* ---- PLAN TAB ---- */}
+                  {rightPanelTab === 'plan' && (() => {
+                    const allPlan = globalContents.filter(c => c.type === 'ESTRATÉGICO');
+                    const clientsInPlan = [...new Set(allPlan.map(c => c.projectId))];
+                    const filtered = planClientFilter ? allPlan.filter(c => c.projectId === planClientFilter) : (currentProject ? allPlan.filter(c => c.projectId === currentProject.id) : allPlan);
                     
-                    <p className="text-xs text-on-surface-variant font-medium">Hitos estratégicos para Octubre</p>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    {tasks.filter(t => t.projectId === currentProject?.id).length === 0 && (
-                      <div className="text-center p-6 border-2 border-dashed border-outline-variant/30 rounded-xl">
-                        <p className="text-xs text-on-surface-variant font-medium">No hay tareas para este proyecto.</p>
-                      </div>
-                    )}
-                    {tasks.filter(t => t.projectId === currentProject?.id).map(task => {
-                      const isCompleted = task.status === "Completada";
-                      const priorityStyle = getPriorityColors(task.priority);
-                      const borderColor = isCompleted ? "border-transparent" : priorityStyle.split(" ")[0];
-                      const badgeBg = isCompleted ? "bg-outline-variant/30 text-on-surface-variant" : priorityStyle.split(" ").slice(1).join(" ");
-                      
-                      return (
-                        <div key={task.id} className={`${isCompleted ? 'bg-surface-container/50 opacity-60' : 'bg-surface-container-lowest shadow-sm hover:shadow-md'} p-4 rounded-xl border-l-4 ${borderColor} transition-all relative group`}>
-                          <button 
-                            onClick={() => handleDeleteTask(task.id)}
-                            className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 text-outline-variant hover:text-error transition-all"
+                    return (
+                      <div className="flex flex-col flex-1 overflow-hidden">
+                        <div className="flex items-center justify-between mb-3 shrink-0">
+                          <div>
+                            <h3 className="text-lg font-extrabold tracking-tight font-headline">Plan Aprobado</h3>
+                            <p className="text-xs text-on-surface-variant font-medium">Hitos confirmados para producción</p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newHito = { id: Date.now().toString(), projectId: currentProject?.id || '2', campaignId: 'base_2', day: new Date().getDate(), month: new Date().getMonth(), year: new Date().getFullYear(), type: 'ESTRATÉGICO', title: 'Nuevo Hito...', icon: 'event', color: 'bg-primary/10', iconColor: 'text-primary', borderColor: 'border-primary', matrixSlot: { day: 'Lunes', colId: 'prod' } };
+                              addContent(newHito).then(() => setSelectedEvent(newHito));
+                            }}
+                            className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                           >
-                            <span className="material-symbols-outlined text-sm">delete</span>
+                            <span className="material-symbols-outlined text-sm">add</span>
                           </button>
-                          <div className="flex items-start justify-between mb-2">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                checked={isCompleted} 
-                                onChange={() => {
-                                  setTasks(tasks.map(t => t.id === task.id ? { ...t, status: isCompleted ? 'Pendiente' : 'Completada' } : t));
-                                }}
-                                className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary transition-all" 
-                              />
-                              <span className={`text-sm font-bold leading-tight ${isCompleted ? 'line-through' : ''}`}>{task.title}</span>
-                            </label>
-                          </div>
-                          <div className="flex items-center justify-between mt-4">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${badgeBg}`}>
-                              {isCompleted ? "Completada" : `Prioridad ${task.priority}`}
-                            </span>
-                            {!isCompleted && (
-                              <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
-                                <span className="material-symbols-outlined text-[14px]">event</span>
-                                {task.date}
-                              </span>
-                            )}
-                          </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                  
-                  <div className="mt-auto pt-8">
+
+                        {/* Client Filter Chips */}
+                        {clientsInPlan.length > 1 && (
+                          <div className="flex gap-1.5 flex-wrap mb-3 shrink-0">
+                            <button onClick={() => setPlanClientFilter(null)} className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${ !planClientFilter ? 'bg-primary text-white border-primary' : 'border-outline-variant/30 text-on-surface-variant hover:border-primary/30'}`}>Todos</button>
+                            {clientsInPlan.map(projId => {
+                              const proj = projects.find(p => p.id === projId);
+                              if (!proj) return null;
+                              return (
+                                <button key={projId} onClick={() => setPlanClientFilter(planClientFilter === projId ? null : projId)}
+                                  className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all border ${ planClientFilter === projId ? 'text-white border-transparent' : 'border-outline-variant/30 text-on-surface-variant'}`}
+                                  style={{ backgroundColor: planClientFilter === projId ? (proj as any).accent?.replace('bg-','') || '#6366f1' : undefined }}
+                                >{proj.name}</button>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        <div className="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-4">
+                          {filtered.length === 0 && (
+                            <div className="text-center p-8 border-2 border-dashed border-outline-variant/30 rounded-2xl">
+                              <span className="material-symbols-outlined text-3xl text-outline-variant/40 mb-2 block">event_available</span>
+                              <p className="text-xs text-on-surface-variant font-medium">Aún no hay hitos en el plan.<br/>Añade desde Sugerencias con el botón +.</p>
+                            </div>
+                          )}
+                          {filtered.sort((a,b) => (a.year||0)*10000+(a.month||0)*100+(a.day||0) - ((b.year||0)*10000+(b.month||0)*100+(b.day||0))).map(c => {
+                            const proj = projects.find(p => p.id === c.projectId);
+                            const dateStr = c.day !== undefined && c.month !== undefined
+                              ? new Date(c.year || new Date().getFullYear(), c.month, c.day).toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' })
+                              : '—';
+                            return (
+                              <div key={c.id} className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-all group relative border border-outline-variant/5">
+                                <button onClick={() => deleteContent(c.id)} className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 text-outline-variant hover:text-error transition-all">
+                                  <span className="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                                <div className="flex items-start gap-3">
+                                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                    <span className="material-symbols-outlined text-[14px] text-primary">{c.icon || 'calendar_month'}</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0 pr-4">
+                                    <p className="text-sm font-bold text-on-surface leading-tight mb-1">{c.title}</p>
+                                    <p className="text-[10px] text-on-surface-variant font-medium">{dateStr}</p>
+                                  </div>
+                                </div>
+                                {proj && !currentProject && (
+                                  <div className="mt-3 flex items-center gap-1.5">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${(proj as any).accent || 'bg-primary'}`}></div>
+                                    <span className="text-[9px] text-on-surface-variant font-bold uppercase tracking-widest">{proj.name}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="mt-auto pt-4 shrink-0">
                     <div className="p-4 rounded-xl bg-primary-container text-on-primary-container/80 relative overflow-hidden group">
                       <div className="relative z-10">
                         <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-2">Insights del Curador</h4>

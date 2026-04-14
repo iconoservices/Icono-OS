@@ -144,3 +144,42 @@ export const calendarEvents = [
   { day: 3, projectId: "1", campaignId: "base_1", type: "LinkedIn",    title: "Avance de Obra Sur",     color: "bg-blue-100",               iconColor: "text-blue-700",                  borderColor: "border-blue-700",                  icon: "domain"            },
   { day: 5, projectId: "1", campaignId: "base_1", type: "YouTube",     title: "Entrevista Ing. Jefe",   color: "bg-red-100",                iconColor: "text-red-600",                   borderColor: "border-red-600",                   icon: "smart_display"     },
 ];
+
+export interface SuggestedDate {
+  id: string;
+  title: string;
+  date: string; // ISO format or relative
+  type: "Feriado" | "Marketing" | "Estratégico";
+  description: string;
+  icon: string;
+}
+
+export const SUGGESTED_DATES: SuggestedDate[] = [
+  // ABRIL 2026
+  { id: "pe_abr1", title: "Viernes Santo", date: "2026-04-03", type: "Feriado", description: "Feriado largo de Semana Santa. Máximo consumo familiar. Ideal para contenido de tradición y gastronomía.", icon: "church" },
+  { id: "pe_abr2", title: "Día de la Tierra", date: "2026-04-22", type: "Estratégico", description: "Alto engagement en contenido eco-consciente. Buena oportunidad para marcas con propósito.", icon: "eco" },
+  // MAYO 2026
+  { id: "pe_may1", title: "Día del Trabajo", date: "2026-05-01", type: "Feriado", description: "Feriado Nacional. Contenido motivacional, tributos al trabajo en equipo.", icon: "engineering" },
+  { id: "pe_may2", title: "Día de la Madre", date: "2026-05-10", type: "Marketing", description: "Semana de mayor conversión del primer semestre en retail, food & beverage y regalos.", icon: "favorite" },
+  // JUNIO 2026
+  { id: "pe_jun1", title: "Día del Padre", date: "2026-06-21", type: "Marketing", description: "Segundo pico de conversión por regalos. Buen momento para promos y cenas especiales.", icon: "man" },
+  { id: "pe_jun2", title: "San Juan / Amazonía", date: "2026-06-24", type: "Feriado", description: "Fiestas amazónicas. Oportunidad de contenido regional y cultural muy auténtico.", icon: "forest" },
+  // JULIO 2026
+  { id: "pe_jul1", title: "Fiestas Patrias — 28 Jul", date: "2026-07-28", type: "Feriado", description: "El hito patriótico más importante del año. Máxima oportunidad de campañas de orgullo nacional.", icon: "flag" },
+  { id: "pe_jul2", title: "Fiestas Patrias — 29 Jul", date: "2026-07-29", type: "Feriado", description: "Segundo día de Fiestas Patrias. Ideal para contenidos de gastronomía peruana y cierre festivo.", icon: "restaurant" },
+  // AGOSTO 2026
+  { id: "pe_ago1", title: "Santa Rosa de Lima", date: "2026-08-30", type: "Feriado", description: "Patrona de Lima. Feriado con fuerte connotación espiritual y local.", icon: "local_florist" },
+  // SEPTIEMBRE 2026
+  { id: "pe_sep1", title: "Día de la Primavera", date: "2026-09-23", type: "Estratégico", description: "Vibe de renovación. Ideal para lanzamientos de temporada y contenido aspiracional.", icon: "sunny" },
+  // OCTUBRE 2026
+  { id: "pe_oct1", title: "Combate de Angamos", date: "2026-10-08", type: "Feriado", description: "Feriado Nacional. Menor engagement orgánico, mayor consumo de ocio.", icon: "directions_boat" },
+  { id: "mkt_oct1", title: "Cyber Wow 2026", date: "2026-10-19", type: "Marketing", description: "Semana de alto tráfico. Preparar campañas de conversión directa y descuentos.", icon: "shopping_cart" },
+  { id: "pe_oct2", title: "Halloween / Canción Criolla", date: "2026-10-31", type: "Marketing", description: "Doble oportunidad temática: Terror global vs Identidad local peruana.", icon: "celebration" },
+  // NOVIEMBRE 2026
+  { id: "pe_nov1", title: "Todos los Santos", date: "2026-11-01", type: "Feriado", description: "Feriado largo. Oportunidad para contenidos reflexivos o de viaje en familia.", icon: "church" },
+  { id: "mkt_nov1", title: "Black Friday", date: "2026-11-27", type: "Marketing", description: "Pico máximo de ventas digital. Campañas de urgencia y conteo regresivo.", icon: "sell" },
+  { id: "mkt_nov2", title: "Cyber Monday", date: "2026-11-30", type: "Marketing", description: "Extensión del Black Friday. Ideal para promos de productos digitales y tecnología.", icon: "devices" },
+  // DICIEMBRE 2026
+  { id: "pe_dic1", title: "Inmaculada Concepción", date: "2026-12-08", type: "Feriado", description: "Inicio oficial del mood navideño intensivo. Decoraciones y lanzamientos de temporada.", icon: "hotel_class" },
+  { id: "mkt_dic1", title: "Navidad", date: "2026-12-25", type: "Marketing", description: "Pico absoluto de la temporada. Contenido cálido, nostálgico y de cierre de año.", icon: "card_giftcard" },
+];
