@@ -325,13 +325,13 @@ export default function Dashboard() {
                       <th className="py-4 px-6 text-[11px] font-black uppercase tracking-widest text-slate-400 w-24 border-b border-outline-variant/10">Día</th>
                       
                       {initialMatrixColumns.map(col => (
-                        <th key={col.id} className="py-4 px-4 border-b border-outline-variant/10 group cursor-pointer hover:bg-surface-container/50 transition-colors">
+                        <th key={col.id} className="py-4 px-4 border-b border-outline-variant/10 group cursor-pointer hover:bg-surface-container/50 transition-colors min-w-[160px] max-w-[200px]">
                           <div className="flex items-center justify-between">
-                            <div>
-                              <span className={`text-[11px] font-black uppercase tracking-tighter ${col.color}`}>{col.title}</span>
-                              <span className="block text-[9px] font-bold text-slate-400 normal-case tracking-normal">{col.subtitle}</span>
+                            <div className="overflow-hidden">
+                              <span className={`text-[11px] font-black uppercase tracking-tighter ${col.color} block truncate`}>{col.title}</span>
+                              <span className="block text-[9px] font-bold text-slate-400 normal-case tracking-normal truncate">{col.subtitle}</span>
                             </div>
-                            <span className="material-symbols-outlined text-[16px] opacity-0 group-hover:opacity-100 text-slate-300 transition-all">more_vert</span>
+                            <span className="material-symbols-outlined text-[16px] opacity-0 group-hover:opacity-100 text-slate-300 transition-all shrink-0">more_vert</span>
                           </div>
                         </th>
                       ))}
@@ -346,7 +346,7 @@ export default function Dashboard() {
                       <tr key={dayName} className="hover:bg-primary/[0.02] transition-colors group">
                         <td className="py-6 px-6 align-top bg-surface-container-low/20 border-r border-outline-variant/5">
                           <span className="text-base font-black text-primary tracking-tighter block leading-none">{dayName}</span>
-                          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mt-1 block">Octubre</span>
+                          <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mt-1 block">{monthName}</span>
                         </td>
                         
                         {initialMatrixColumns.map(col => {
@@ -369,71 +369,80 @@ export default function Dashboard() {
 
                           return (
                             <td key={`${dayName}-${col.id}`} className="p-4 align-top">
-                              <div className="flex flex-col gap-2 min-h-[44px]">
-                                {activeStrategies.length > 0 ? (
-                                  activeStrategies.map((item: any, i) => (
-                                    <div 
-                                      key={`${item.campaignId}-${item.actionId}`}
-                                      onClick={() => {
-                                        setActiveMatrixSlot({ 
-                                          campaignId: item.campaignId, 
-                                          actionId: item.actionId,
-                                          day: dayName, 
-                                          colId: col.id, 
-                                          text: item.strategy, 
-                                          time: item.time,
-                                          color: col.color 
-                                        }); 
-                                        setIsRightPanelOpen(true); 
-                                      }}
-                                      className={`group/item relative p-3 rounded-xl border-l-[6px] transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md
-                                        ${col.isAction 
-                                          ? 'bg-emerald-50 text-emerald-800 border-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400' 
-                                          : `bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-white/5 ${col.color?.replace('text-', 'border-') || 'border-primary'}`}
-                                      `}
-                                    >
-                                      {activeStrategies.length > 1 && (
-                                        <div className="text-[8px] font-black uppercase tracking-tighter text-slate-400 mb-1 flex items-center gap-1">
-                                          <div className={`w-1 h-1 rounded-full ${col.color?.replace('text-', 'bg-')}`}></div>
-                                          {item.campaignName}
-                                        </div>
-                                      )}
-                                      <p className={`text-[11px] font-bold leading-tight line-clamp-2 ${col.color}`}>{item.strategy}</p>
-                                      
-                                      {item.time && (
-                                        <div className="mt-2 flex items-center gap-1 text-[9px] font-black text-slate-400">
-                                          <span className="material-symbols-outlined text-[12px]">schedule</span>
-                                          {item.time}
-                                        </div>
-                                      )}
-                                      
-                                      <div className="absolute top-2 right-2 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                        <span className="material-symbols-outlined text-[14px] text-slate-300">edit</span>
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div 
-                                    onClick={() => { 
-                                      // Default to Base Campaign if empty
-                                      const baseCamp = campaigns.find(c => c.isBase) || campaigns[0];
-                                      handleAddActionToSlot(dayName, col.id, baseCamp.id);
-                                    }}
-                                    className="w-full h-full min-h-[44px] rounded-xl border border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 hover:border-primary/40 hover:bg-primary/[0.03] transition-all cursor-pointer group/add"
-                                  >
-                                    <span className="material-symbols-outlined text-sm text-slate-300 group-hover/add:text-primary transition-colors">add</span>
-                                  </div>
-                                )}
+                              <div className="flex flex-col gap-2">
+                                {activeStrategies.length > 0 ? (() => {
+                                      // Group strategies by campaignId
+                                      const grouped: Record<string, any[]> = {};
+                                      activeStrategies.forEach(item => {
+                                        if (!grouped[item.campaignId]) grouped[item.campaignId] = [];
+                                        grouped[item.campaignId].push(item);
+                                      });
 
-                                {activeStrategies.length > 0 && (
-                                  <button 
-                                    onClick={() => handleAddActionToSlot(dayName, col.id, activeStrategies[0].campaignId)}
-                                    className="w-full py-1.5 border border-dashed border-slate-100 dark:border-white/5 rounded-lg opacity-0 group-hover:opacity-100 hover:opacity-100 hover:border-primary/20 hover:bg-primary/[0.02] transition-all flex items-center justify-center gap-2"
-                                  >
-                                    <span className="material-symbols-outlined text-xs text-slate-300">add_task</span>
-                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Añadir Acción</span>
-                                  </button>
-                                )}
+                                      return Object.entries(grouped).map(([campId, items]) => (
+                                        <div key={campId} className="space-y-1.5 mb-2 last:mb-0">
+                                          {/* Show Campaign Label only ONCE for the group if multiple campaigns exist */}
+                                          {campaigns.length > 1 && (
+                                            <div className="text-[8px] font-black uppercase tracking-tighter text-slate-400 mb-1 flex items-center gap-1 overflow-hidden">
+                                              <div className={`w-1 h-1 rounded-full shrink-0 ${items[0].color?.replace('text-', 'bg-') || 'bg-primary'}`}></div>
+                                              <span className="truncate">{items[0].campaignName}</span>
+                                            </div>
+                                          )}
+                                          
+                                          {items.map((item) => (
+                                            <div 
+                                              key={`${item.campaignId}-${item.actionId}`}
+                                              onClick={() => {
+                                                setActiveMatrixSlot({ 
+                                                  campaignId: item.campaignId, 
+                                                  actionId: item.actionId,
+                                                  day: dayName, 
+                                                  colId: col.id, 
+                                                  text: item.strategy, 
+                                                  time: item.time,
+                                                  color: col.color 
+                                                }); 
+                                                setIsRightPanelOpen(true); 
+                                              }}
+                                              className={`group/item relative p-2.5 rounded-xl border-l-[4px] transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md bg-white dark:bg-slate-900 border-outline-variant/10 ${col.color?.replace('text-', 'border-') || 'border-primary'}`}
+                                            >
+                                              <p className={`text-[11px] font-bold leading-tight line-clamp-2 ${col.color}`}>{item.strategy}</p>
+                                              
+                                              {item.time && (
+                                                <div className="mt-1.5 flex items-center gap-1 text-[9px] font-black text-slate-400">
+                                                  <span className="material-symbols-outlined text-[12px]">schedule</span>
+                                                  {item.time}
+                                                </div>
+                                              )}
+                                              
+                                              <div className="absolute top-2 right-2 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                <span className="material-symbols-outlined text-[14px] text-slate-300">edit</span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ));
+                                    })() : (
+                                    <div 
+                                      onClick={() => { 
+                                        // Default to Base Campaign if empty
+                                        const baseCamp = campaigns.find(c => c.isBase) || campaigns[0];
+                                        handleAddActionToSlot(dayName, col.id, baseCamp.id);
+                                      }}
+                                      className="w-full h-full min-h-[44px] rounded-xl border border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 hover:border-primary/40 hover:bg-primary/[0.03] transition-all cursor-pointer group/add"
+                                    >
+                                      <span className="material-symbols-outlined text-sm text-slate-300 group-hover/add:text-primary transition-colors">add</span>
+                                    </div>
+                                  )}
+
+                                  {activeStrategies.length > 0 && (
+                                    <button 
+                                      onClick={() => handleAddActionToSlot(dayName, col.id, activeStrategies[0].campaignId)}
+                                      className="w-full py-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:opacity-100 hover:bg-primary/[0.02] transition-all flex items-center justify-center gap-2"
+                                    >
+                                      <span className="material-symbols-outlined text-xs text-slate-300">add</span>
+                                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nuevo</span>
+                                    </button>
+                                  )}
                               </div>
                             </td>
                           );
@@ -889,14 +898,14 @@ export default function Dashboard() {
                       </div>
                       
                       <div className="space-y-2 flex-1 overflow-y-auto no-scrollbar pb-4 mt-2">
-                        {globalContents.filter(c => c.projectId === currentProject?.id && c.type !== 'ESTRATÉGICO').length === 0 ? (
+                        {globalContents.filter(c => c.projectId === currentProject?.id).length === 0 ? (
                             <div className="text-center p-8 border-2 border-dashed border-outline-variant/30 rounded-2xl">
                               <span className="material-symbols-outlined text-3xl text-outline-variant/40 mb-2 block">task</span>
                               <p className="text-xs text-on-surface-variant font-medium">Aún no hay actividades.<br/>Añade piezas desde la matriz para empezar.</p>
                             </div>
                         ) : (
                           globalContents
-                            .filter(t => t.projectId === currentProject?.id && t.type !== 'ESTRATÉGICO')
+                            .filter(t => t.projectId === currentProject?.id)
                             .map(task => {
                               return (
                                 <div 
@@ -919,7 +928,16 @@ export default function Dashboard() {
                                       <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${task.color || 'bg-surface-container-low'} ${task.iconColor || 'text-on-surface'}`}>
                                         {task.type}
                                       </span>
-                                      <span className="text-[10px] font-bold text-on-surface-variant">{task.time || 'Sin hora'}</span>
+                                      <span className="text-[10px] font-bold text-on-surface-variant flex items-center gap-1">
+                                        {task.type === 'ESTRATÉGICO' && task.day !== undefined ? (
+                                          <>
+                                            <span className="material-symbols-outlined text-[12px]">calendar_month</span>
+                                            {new Date(task.year || new Date().getFullYear(), task.month || new Date().getMonth(), task.day).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}
+                                          </>
+                                        ) : (
+                                          task.time || 'Sin hora'
+                                        )}
+                                      </span>
                                     </div>
                                     <h4 className="text-[12px] font-bold text-on-surface leading-tight break-words">{task.title}</h4>
                                   </div>

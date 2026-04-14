@@ -29,9 +29,7 @@ export default function Projects() {
           {projects.map((project) => (
             <div
               key={project.id}
-              className={`group bg-surface-container-lowest rounded-xl p-8 hover:shadow-xl transition-all duration-300 flex flex-col relative overflow-hidden ${
-                project.large ? "md:col-span-2 lg:col-span-1" : ""
-              }`}
+              className="group bg-surface-container-lowest rounded-xl p-8 hover:shadow-xl transition-all duration-300 flex flex-col relative overflow-hidden"
             >
               <div className={`absolute top-0 left-0 w-1 h-full ${project.accent}`}></div>
               <div className="flex justify-between items-start mb-10">

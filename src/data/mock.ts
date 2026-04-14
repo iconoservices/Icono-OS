@@ -8,7 +8,6 @@ export interface Project {
   accent: string;
   logo: string;
   colors: string[];
-  large?: boolean;
 }
 
 export interface StrategicAction {
@@ -106,7 +105,6 @@ export const projectsData: Project[] = [
     accent: "bg-[#9B59B6]",
     logo: "https://ui-avatars.com/api/?name=LS&background=9B59B6&color=fff",
     colors: ["bg-[#8E44AD]", "bg-[#2C3E50]", "bg-[#D2B4DE]", "bg-[#FFFFFF]"],
-    large: true,
   },
   {
     id: "4",
