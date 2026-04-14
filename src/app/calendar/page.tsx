@@ -107,7 +107,9 @@ export default function CalendarPage() {
                   const dayData = camp.data.find((d: any) => d.day === dayName);
                   if (!dayData) return [];
                   const actions: any[] = [];
-                  Object.entries(dayData.entries).forEach(([colId, colActions]) => {
+                  const colOrder = ['prod', 'tiktok', 'ig', 'fb', 'stories'];
+                  colOrder.forEach(colId => {
+                    const colActions = dayData.entries[colId];
                     if (Array.isArray(colActions)) {
                       colActions.forEach(action => {
                         actions.push({
