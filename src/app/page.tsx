@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { activeTasks, calendarEvents, projectCampaigns, SUGGESTED_DATES } from "@/data/mock";
+import { calendarEvents, projectCampaigns, SUGGESTED_DATES } from "@/data/mock";
 import ProductionModal from "@/components/ProductionModal";
 import { useProject } from "@/context/ProjectContext";
 
@@ -52,10 +52,7 @@ export default function Dashboard() {
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   
   // Editable Data States
-  const [tasks, setTasks] = useState(activeTasks);
   const [activeMatrixSlot, setActiveMatrixSlot] = useState<{ campaignId: string, actionId: string, day: string, colId: string, text: string, time?: string, color: string } | null>(null);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [isAddingTask, setIsAddingTask] = useState(false);
   const [rightPanelTab, setRightPanelTab] = useState<"tareas" | "hitos" | "plan">("tareas");
   const [planClientFilter, setPlanClientFilter] = useState<string | null>(null);
   
@@ -166,21 +163,6 @@ export default function Dashboard() {
   const handlePrevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   const handleNextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
 
-  const handleAddTask = () => {
-    if (!newTaskTitle.trim() || !currentProject) return;
-    const newTask = {
-      id: Date.now().toString(),
-      projectId: currentProject.id,
-      title: newTaskTitle,
-      priority: "Media" as any,
-      status: "Pendiente" as any,
-      date: "Hoy"
-    };
-    setTasks([newTask, ...tasks]);
-    setNewTaskTitle("");
-    setIsAddingTask(false);
-  };
-
   const handleAddFromSuggestion = async (suggestion: any) => {
     if (!currentProject) return;
     const newContent = {
@@ -201,18 +183,6 @@ export default function Dashboard() {
     };
     await addContent(newContent);
     setRightPanelTab('plan');
-  };
-
-  const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter(t => t.id !== id));
-  };
-   const getPriorityColors = (priority: string) => {
-    switch(priority) {
-      case "Alta": return "border-error bg-error-container text-on-error-container";
-      case "Media": return "border-primary-fixed bg-primary-fixed text-on-primary-fixed";
-      case "Baja": return "border-secondary-container bg-secondary-container text-on-secondary-container";
-      default: return "";
-    }
   };
 
   const matrixDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -813,64 +783,59 @@ export default function Dashboard() {
                     <div className="flex flex-col flex-1 overflow-hidden">
                       <div className="flex items-center justify-between mb-2 shrink-0">
                         <div>
-                          <h3 className="text-lg font-extrabold tracking-tight font-headline">Tareas Activas</h3>
-                          <p className="text-xs text-on-surface-variant font-medium">Producción del día a día</p>
+                          <h3 className="text-lg font-extrabold tracking-tight font-headline">Actividades</h3>
+                          <p className="text-xs text-on-surface-variant font-medium">Piezas y acciones en producción</p>
                         </div>
                         <button
-                          onClick={() => setIsAddingTask(!isAddingTask)}
-                          className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                          onClick={() => setView('weekly')}
+                          className="p-1.5 rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container transition-colors"
+                          title="Ver en Calendario"
                         >
-                          <span className="material-symbols-outlined text-sm">{isAddingTask ? 'close' : 'add'}</span>
+                          <span className="material-symbols-outlined text-sm">calendar_month</span>
                         </button>
                       </div>
-                      {isAddingTask && (
-                        <div className="mb-4 animate-in slide-in-from-top-2 duration-200 shrink-0">
-                          <div className="bg-white p-3 rounded-xl shadow-sm border border-primary/20">
-                            <input
-                              type="text"
-                              value={newTaskTitle}
-                              onChange={(e) => setNewTaskTitle(e.target.value)}
-                              onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                              placeholder="¿Qué falta por hacer?"
-                              className="w-full text-xs font-bold border-none focus:ring-0 p-0 mb-3"
-                              autoFocus
-                            />
-                            <div className="flex justify-end gap-2">
-                              <button onClick={() => setIsAddingTask(false)} className="px-3 py-1 text-[10px] font-bold text-outline-variant uppercase">Cancelar</button>
-                              <button onClick={handleAddTask} className="px-3 py-1 text-[10px] font-bold bg-primary text-white rounded-lg uppercase tracking-wider">Guardar</button>
+                      
+                      <div className="space-y-2 flex-1 overflow-y-auto no-scrollbar pb-4 mt-2">
+                        {globalContents.filter(c => c.projectId === currentProject?.id && c.type !== 'ESTRATÉGICO').length === 0 ? (
+                            <div className="text-center p-8 border-2 border-dashed border-outline-variant/30 rounded-2xl">
+                              <span className="material-symbols-outlined text-3xl text-outline-variant/40 mb-2 block">task</span>
+                              <p className="text-xs text-on-surface-variant font-medium">Aún no hay actividades.<br/>Añade piezas desde la matriz para empezar.</p>
                             </div>
-                          </div>
-                        </div>
-                      )}
-                      <div className="space-y-3 flex-1 overflow-y-auto no-scrollbar pb-4">
-                        {tasks.filter(t => t.projectId === currentProject?.id).map(task => {
-                          const isCompleted = task.status === 'Completada';
-                          const priorityStyle = getPriorityColors(task.priority);
-                          const borderColor = isCompleted ? 'border-transparent' : priorityStyle.split(' ')[0];
-                          const badgeBg = isCompleted ? 'bg-outline-variant/30 text-on-surface-variant' : priorityStyle.split(' ').slice(1).join(' ');
-                          return (
-                            <div key={task.id} className={`${isCompleted ? 'bg-surface-container/50 opacity-60' : 'bg-white shadow-sm hover:shadow-md'} p-4 rounded-xl border-l-4 ${borderColor} transition-all relative group`}>
-                              <button onClick={() => handleDeleteTask(task.id)} className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 text-outline-variant hover:text-error transition-all">
-                                <span className="material-symbols-outlined text-sm">delete</span>
-                              </button>
-                              <label className="flex items-center gap-3 cursor-pointer mb-3">
-                                <input type="checkbox" checked={isCompleted}
-                                  onChange={() => setTasks(tasks.map(t => t.id === task.id ? { ...t, status: isCompleted ? 'Pendiente' : 'Completada' } : t))}
-                                  className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary"
-                                />
-                                <span className={`text-sm font-bold leading-tight ${isCompleted ? 'line-through' : ''}`}>{task.title}</span>
-                              </label>
-                              <div className="flex items-center justify-between">
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${badgeBg}`}>{isCompleted ? 'Completada' : `Prioridad ${task.priority}`}</span>
-                                {!isCompleted && <span className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">event</span>{task.date}</span>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {tasks.filter(t => t.projectId === currentProject?.id).length === 0 && (
-                          <div className="text-center p-6 border-2 border-dashed border-outline-variant/30 rounded-xl">
-                            <p className="text-xs text-on-surface-variant font-medium">No hay tareas pendientes.</p>
-                          </div>
+                        ) : (
+                          globalContents
+                            .filter(t => t.projectId === currentProject?.id && t.type !== 'ESTRATÉGICO')
+                            .map(task => {
+                              return (
+                                <div 
+                                  key={task.id} 
+                                  onClick={() => setSelectedEvent(task)}
+                                  className={`bg-white p-3 rounded-2xl border-l-[6px] border-y border-r border-outline-variant/10 shadow-sm hover:shadow-md transition-all group flex items-start gap-3 cursor-pointer ${task.borderColor || 'border-l-primary'}`}
+                                >
+                                  <div className="pt-0.5">
+                                    <input 
+                                      type="checkbox" 
+                                      className="w-4 h-4 rounded appearance-none border-2 border-outline-variant/30 hover:border-primary checked:bg-primary checked:border-primary transition-all cursor-pointer relative checked:after:content-['✓'] checked:after:text-white checked:after:text-xs checked:after:absolute checked:after:left-[2px] checked:after:-top-[1px]"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteContent(task.id);
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${task.color || 'bg-surface-container-low'} ${task.iconColor || 'text-on-surface'}`}>
+                                        {task.type}
+                                      </span>
+                                      <span className="text-[10px] font-bold text-on-surface-variant">{task.time || 'Sin hora'}</span>
+                                    </div>
+                                    <h4 className="text-[12px] font-bold text-on-surface leading-tight break-words">{task.title}</h4>
+                                  </div>
+                                  <button onClick={(e) => { e.stopPropagation(); deleteContent(task.id); }} className="w-6 h-6 rounded-full bg-error/10 text-error flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-error hover:text-white shrink-0 mt-1">
+                                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                                  </button>
+                                </div>
+                              );
+                            })
                         )}
                       </div>
                     </div>

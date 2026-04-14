@@ -1,14 +1,4 @@
-export type Priority = "Alta" | "Media" | "Baja";
-export type TaskStatus = "Pendiente" | "Completada";
 
-export interface Task {
-  id: string;
-  projectId: string;
-  title: string;
-  priority: Priority;
-  status: TaskStatus;
-  date: string;
-}
 
 export interface Project {
   id: string;
@@ -129,12 +119,7 @@ export const projectsData: Project[] = [
   },
 ];
 
-export const activeTasks: Task[] = [
-  { id: "1", projectId: "1", title: "Aprobar Gasto de Anuncios del Fin de Semana", priority: "Alta",  status: "Pendiente",  date: "Hoy"       },
-  { id: "2", projectId: "1", title: "Finalizar Fotos del Site",                    priority: "Media", status: "Pendiente",  date: "05 Oct"    },
-  { id: "3", projectId: "2", title: "Reporte Mensual de Estadísticas",              priority: "Baja",  status: "Pendiente",  date: "12 Oct"    },
-  { id: "4", projectId: "2", title: "Integrar al Equipo a Restobar X",              priority: "Baja",  status: "Completada", date: "Completada" },
-];
+
 
 export const calendarEvents = [
   { day: 1, projectId: "2", campaignId: "base_2", type: "Reels de IG", title: "Intro del Chef",         color: "bg-tertiary-fixed/30",      iconColor: "text-on-tertiary-fixed-variant", borderColor: "border-on-tertiary-fixed-variant", icon: "movie"            },
