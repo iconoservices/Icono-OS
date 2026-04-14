@@ -33,7 +33,19 @@ const defaultCampaigns = [
 ];
 
 export default function Dashboard() {
-  const { currentProject, hiddenCampaignIds, globalContents, setGlobalContents, allProjectCampaigns, setAllProjectCampaigns, addContent, updateContent, deleteContent, updateCampaign } = useProject();
+  const { 
+    projects,
+    currentProject, 
+    hiddenCampaignIds, 
+    globalContents, 
+    setGlobalContents, 
+    allProjectCampaigns, 
+    setAllProjectCampaigns, 
+    addContent, 
+    updateContent, 
+    deleteContent, 
+    updateCampaign 
+  } = useProject();
   const [view, setView] = useState<"monthly" | "weekly" | "matrix" | "yearly">("matrix");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
