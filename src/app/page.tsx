@@ -625,21 +625,18 @@ export default function Dashboard() {
                           return (
                             <div 
                               key={`strat-${i}`} 
-                              className={`group relative px-2 py-1.5 rounded-xl border border-outline-variant/10 transition-all cursor-pointer overflow-hidden ${matchingEvents.length > 0 ? 'bg-white dark:bg-slate-900 shadow-sm hover:shadow-md' : 'bg-surface-container-low/30 border-dashed opacity-60 hover:opacity-100 hover:bg-surface-container-low/50'}`}
+                              className={`group relative p-2.5 rounded-xl border border-outline-variant/10 transition-all cursor-pointer overflow-hidden ${matchingEvents.length > 0 ? 'bg-white dark:bg-slate-900 shadow-sm hover:shadow-md' : 'bg-surface-container-low/30 border-dashed opacity-60 hover:opacity-100 hover:bg-surface-container-low/50'}`}
                               onClick={() => matchingEvents.length > 0 ? setSelectedEvent(matchingEvents[0]) : handleAddActionToSlot(dayName, action.colId, action.campaignId)}
                             >
-                              <div className="flex items-center justify-between mb-1">
-                                <span className={`px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-widest ${action.color} bg-surface-container-low`}>
+                              <div className="mb-1.5">
+                                <span className={`px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest ${action.color} bg-surface-container-low border border-outline-variant/5`}>
                                   {colName}
                                 </span>
-                                <span className="material-symbols-outlined text-[12px] opacity-0 group-hover:opacity-100 transition-opacity text-slate-400">
-                                  {matchingEvents.length > 0 ? 'more_vert' : 'add'}
-                                </span>
                               </div>
-                              <h4 className={`text-[10.5px] font-bold leading-snug mt-1 ${matchingEvents.length > 0 ? 'text-on-surface' : 'text-on-surface-variant'}`}>{action.strategy}</h4>
+                              <h4 className={`text-[11px] font-extrabold leading-tight ${matchingEvents.length > 0 ? 'text-on-surface' : 'text-on-surface-variant'}`}>{action.strategy}</h4>
                               
                               {action.time && (
-                                <div className="flex items-center gap-1 mt-1.5 text-[8px] font-bold text-on-surface-variant/70 uppercase">
+                                <div className="flex items-center gap-1 mt-1 text-[8px] font-bold text-on-surface-variant/70 uppercase">
                                   <span className="material-symbols-outlined text-[10px]">schedule</span> {action.time}
                                 </div>
                               )}
