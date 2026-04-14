@@ -6,12 +6,21 @@ import ProductionModal from "@/components/ProductionModal";
 import { SUGGESTED_DATES, SuggestedDate } from "@/data/mock";
 
 export default function CalendarPage() {
-  const { currentProject, projects, hiddenCampaignIds, globalContents } = useProject();
+  const { currentProject, projects, hiddenCampaignIds, globalContents, allProjectCampaigns } = useProject();
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [view, setView] = useState<"weekly" | "monthly">("weekly");
 
   const currentWeekDays = [16, 17, 18, 19, 20, 21, 22]; // Mock week dates
   const dayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  const matrixDays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const getColColor = (colId: string) => {
+    const map: any = { prod: 'text-emerald-500', tiktok: 'text-[#FE2C55]', ig: 'text-[#E4405F]', fb: 'text-[#1877F2]', stories: 'text-[#E1306C]' };
+    return map[colId] || 'text-primary';
+  };
+
+  const campaigns = currentProject 
+    ? (allProjectCampaigns[currentProject.id] || []) 
+    : Object.values(allProjectCampaigns).flat();
 
   // Filter events: current project (or all if null) + not hidden campaign
   const filteredEvents = globalContents.filter(e => 
@@ -89,10 +98,83 @@ export default function CalendarPage() {
 
             {/* Content columns for each day of the week (1-7) */}
             {[1, 2, 3, 4, 5, 6, 7].map(dayNum => {
+              const dayName = matrixDays[dayNum - 1];
               const dayEvents = filteredEvents.filter(e => (e.day % 7 || 7) === dayNum);
+              
+              const activeStrategies = campaigns
+                .filter(camp => !hiddenCampaignIds.includes(camp.id))
+                .flatMap(camp => {
+                  const dayData = camp.data.find((d: any) => d.day === dayName);
+                  if (!dayData) return [];
+                  const actions: any[] = [];
+                  Object.entries(dayData.entries).forEach(([colId, colActions]) => {
+                    if (Array.isArray(colActions)) {
+                      colActions.forEach(action => {
+                        actions.push({
+                          actionId: action.id,
+                          campaignId: camp.id,
+                          strategy: action.text,
+                          colId,
+                          color: camp.color || getColColor(colId)
+                        });
+                      });
+                    }
+                  });
+                  return actions;
+                });
+
+              const matchedEventIds = new Set();
+              
               return (
                 <div key={dayNum} className="bg-white dark:bg-slate-900 min-h-0 p-1.5 space-y-1.5 border-r border-outline-variant/5 last:border-r-0">
-                  {dayEvents.map(event => (
+                  {activeStrategies.map((action, i) => {
+                    const matchingEvents = dayEvents.filter(e => e.matrixSlot?.colId === action.colId || e.type?.toLowerCase() === action.colId);
+                    matchingEvents.forEach(e => matchedEventIds.add(e.id));
+                    
+                    return (
+                      <div key={`strat-${i}`} className="space-y-1.5">
+                        {matchingEvents.length > 0 ? (
+                          matchingEvents.map(event => (
+                            <div 
+                              key={event.id}
+                              onClick={() => setSelectedEvent(event)}
+                              className={`group relative px-2 py-1.5 rounded-xl border border-outline-variant/10 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${event.color || 'bg-surface-container-low'}`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className={`text-[8px] font-extrabold uppercase tracking-tighter ${event.iconColor || 'text-on-surface'}`}>
+                                  {currentProject === null ? (projects.find(p => p.id === event.projectId)?.name || event.type) : event.type}
+                                </span>
+                                <span className="material-symbols-outlined text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
+                              </div>
+                              <h4 className="text-[10px] font-bold leading-snug text-on-surface mt-0.5">{event.title}</h4>
+                              <p className="text-[8px] font-bold text-slate-500/70 line-clamp-1 leading-tight select-none mt-0.5 italic">{action.strategy}</p>
+                              
+                              {currentProject === null && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <div className={`w-1 h-1 rounded-full ${projects.find(p => p.id === event.projectId)?.accent.replace('bg-', 'bg-') || 'bg-primary'}`}></div>
+                                  <span className="text-[8px] font-bold text-on-surface-variant uppercase truncate">{projects.find(p => p.id === event.projectId)?.name}</span>
+                                </div>
+                              )}
+                              {event.time && (
+                                <div className="flex items-center gap-1 mt-1 text-[8px] font-bold text-on-surface-variant/70 uppercase">
+                                  <span className="material-symbols-outlined text-[10px]">schedule</span> {event.time}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-2 py-1.5 rounded-xl border border-dashed border-outline-variant/30 bg-surface-container-low/20 opacity-60 flex items-start gap-1.5 group hover:bg-surface-container-low/40 transition-colors cursor-pointer">
+                            <span className={`material-symbols-outlined text-[10px] ${action.color} mt-0.5 opacity-50`}>design_services</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[9px] font-bold text-slate-500 line-clamp-2 leading-tight select-none">{action.strategy}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  
+                  {dayEvents.filter(e => !matchedEventIds.has(e.id)).map(event => (
                     <div 
                       key={event.id}
                       onClick={() => setSelectedEvent(event)}

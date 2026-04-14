@@ -556,11 +556,35 @@ export default function Dashboard() {
                 {currentWeekDays.map((date, idx) => {
                   const dayNum = date.getDate();
                   const dayOfWeek = date.getDay() || 7;
+                  const dayName = matrixDays[dayOfWeek - 1];
+
                   const events = globalContents.filter(e => 
                     (e.day === dayNum || e.day === dayOfWeek) && 
                     e.projectId === currentProject?.id &&
                     !hiddenCampaignIds.includes(e.campaignId)
                   );
+
+                  const activeStrategies = campaigns
+                    .filter(camp => !hiddenCampaignIds.includes(camp.id))
+                    .flatMap(camp => {
+                      const dayData = camp.data.find((d: any) => d.day === dayName);
+                      if (!dayData) return [];
+                      const actions: any[] = [];
+                      Object.entries(dayData.entries).forEach(([colId, colActions]) => {
+                        if (Array.isArray(colActions)) {
+                          colActions.forEach(action => {
+                            actions.push({
+                              actionId: action.id,
+                              campaignId: camp.id,
+                              strategy: action.text,
+                              colId,
+                              color: initialMatrixColumns.find(c => c.id === colId)?.color || 'text-primary'
+                            });
+                          });
+                        }
+                      });
+                      return actions;
+                    });
 
                   const suggestions = SUGGESTED_DATES.filter(s => {
                     const sDate = new Date(s.date);
@@ -573,6 +597,8 @@ export default function Dashboard() {
                   const isToday = date.getDate() === today.getDate() && 
                                  date.getMonth() === today.getMonth() && 
                                  date.getFullYear() === today.getFullYear();
+                  
+                  const matchedEventIds = new Set();
                   
                   return (
                     <div key={`week-${idx}`} className={`bg-surface-container-lowest min-h-0 p-1.5 transition-colors hover:bg-surface-container-low ${isToday ? 'bg-primary/[0.03] ring-2 ring-primary ring-inset' : ''}`}>
@@ -587,9 +613,49 @@ export default function Dashboard() {
                             <span className="text-[9px] font-black text-primary uppercase tracking-tighter leading-none truncate">{s.title}</span>
                           </div>
                         ))}
-                        {events.map((event, idx) => (
+                        {activeStrategies.map((action, i) => {
+                          const matchingEvents = events.filter(e => e.matrixSlot?.colId === action.colId || e.type?.toLowerCase() === action.colId);
+                          matchingEvents.forEach(e => matchedEventIds.add(e.id));
+
+                          return (
+                            <div key={`strat-${i}`} className="space-y-1.5">
+                              {matchingEvents.length > 0 ? (
+                                matchingEvents.map((event, idx) => (
+                                  <div 
+                                    key={`event-${event.id}`} 
+                                    onClick={() => setSelectedEvent(event)}
+                                    className={`group relative px-2 py-1.5 rounded-xl border border-outline-variant/10 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${event.color || 'bg-surface-container-low'}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className={`text-[8px] font-extrabold uppercase tracking-tighter ${event.iconColor || 'text-on-surface'}`}>
+                                        {event.type}
+                                      </span>
+                                      <span className="material-symbols-outlined text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">more_vert</span>
+                                    </div>
+                                    <h4 className="text-[10px] font-bold leading-snug text-on-surface mt-0.5">{event.title}</h4>
+                                    <p className="text-[8px] font-bold text-slate-500/70 line-clamp-1 leading-tight select-none mt-0.5 italic">{action.strategy}</p>
+                                    
+                                    {event.time && (
+                                      <div className="flex items-center gap-1 mt-1 text-[8px] font-bold text-on-surface-variant/70 uppercase">
+                                        <span className="material-symbols-outlined text-[10px]">schedule</span> {event.time}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="px-2 py-1.5 rounded-xl border border-dashed border-outline-variant/30 bg-surface-container-low/20 opacity-60 flex items-start gap-1.5 group hover:bg-surface-container-low/40 transition-colors cursor-pointer" onClick={() => handleAddActionToSlot(dayName, action.colId, action.campaignId)}>
+                                  <span className={`material-symbols-outlined text-[10px] ${action.color} mt-0.5 opacity-50`}>design_services</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] font-bold text-slate-500 line-clamp-2 leading-tight select-none">{action.strategy}</p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {events.filter(e => !matchedEventIds.has(e.id)).map((event, idx) => (
                           <div 
-                            key={idx} 
+                            key={`unmatched-${idx}`} 
                             onClick={() => setSelectedEvent(event)}
                             className={`group relative px-2 py-1.5 rounded-xl border border-outline-variant/10 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${event.color || 'bg-surface-container-low'}`}
                           >
