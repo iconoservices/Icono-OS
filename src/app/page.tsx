@@ -914,7 +914,7 @@ export default function Dashboard() {
                     
                     <div className="flex-1 overflow-y-auto no-scrollbar space-y-1.5 pb-4">
                       {globalContents
-                        .filter(c => c.matrixSlot.day === activeMatrixSlot.day && c.matrixSlot.colId === activeMatrixSlot.colId)
+                        .filter(c => c.matrixSlot.day === activeMatrixSlot.day && c.matrixSlot.colId === activeMatrixSlot.colId && c.type !== 'ESTRATÉGICO')
                         .map((content) => (
                         <div 
                           key={content.id}
@@ -990,7 +990,44 @@ export default function Dashboard() {
                         ) : (
                           globalContents
                             .filter(t => t.projectId === currentProject?.id)
+                            .sort((a, b) => {
+                              const today = new Date();
+                              today.setHours(0,0,0,0);
+                              
+                              const getScore = (task: any) => {
+                                const hasDate = task.day !== undefined && task.month !== undefined;
+                                if (!hasDate) return 1; // Producción normal al medio
+                                
+                                const taskDate = new Date(task.year || today.getFullYear(), task.month, task.day);
+                                const daysAway = Math.round((taskDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                                
+                                if (daysAway < 0) return 3; // Pasados al final
+                                if (daysAway <= 7) return 0; // Próximos (<=7 días) arriba de todo
+                                return 2; // Futuros (>7 días) abajo de producción
+                              };
+
+                              const scoreA = getScore(a);
+                              const scoreB = getScore(b);
+                              
+                              if (scoreA !== scoreB) return scoreA - scoreB;
+                              
+                              if (scoreA === 0 || scoreA === 2 || scoreA === 3) {
+                                const dateA = (a.year || today.getFullYear())*10000 + a.month!*100 + a.day!;
+                                const dateB = (b.year || today.getFullYear())*10000 + b.month!*100 + b.day!;
+                                return dateA - dateB;
+                              }
+                              return 0;
+                            })
                             .map(task => {
+                              const today = new Date();
+                              today.setHours(0,0,0,0);
+                              const hasDate = task.day !== undefined && task.month !== undefined;
+                              let daysAway: number | null = null;
+                              if (hasDate) {
+                                const taskDate = new Date(task.year || today.getFullYear(), task.month!, task.day!);
+                                daysAway = Math.round((taskDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                              }
+
                               return (
                                 <div 
                                   key={task.id} 
@@ -1009,9 +1046,17 @@ export default function Dashboard() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between mb-1">
-                                      <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${task.color || 'bg-surface-container-low'} ${task.iconColor || 'text-on-surface'}`}>
-                                        {task.type}
-                                      </span>
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${task.color || 'bg-surface-container-low'} ${task.iconColor || 'text-on-surface'}`}>
+                                          {task.type}
+                                        </span>
+                                        {daysAway !== null && daysAway >= 0 && daysAway <= 7 && (
+                                          <span className="px-1.5 py-0.5 rounded bg-error/10 text-error text-[8px] font-black uppercase tracking-widest flex items-center gap-0.5 animate-pulse">
+                                            <span className="material-symbols-outlined text-[10px]">timer</span>
+                                            {daysAway === 0 ? 'Hoy' : daysAway === 1 ? 'Mañana' : `En ${daysAway} días`}
+                                          </span>
+                                        )}
+                                      </div>
                                       <span className="text-[10px] font-bold text-on-surface-variant flex items-center gap-1">
                                         {task.type === 'ESTRATÉGICO' && task.day !== undefined ? (
                                           <>
