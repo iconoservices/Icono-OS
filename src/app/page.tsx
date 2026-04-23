@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calendarEvents, projectCampaigns, SUGGESTED_DATES } from "@/data/mock";
 import { PROJECT_OKRS, getOKRProgress, getKRProgress, statusConfig } from "@/data/kpis";
@@ -33,6 +33,59 @@ const defaultCampaigns = [
   }
 ];
 
+function DebouncedInput({ 
+  value, 
+  onChange, 
+  className, 
+  placeholder,
+  autoFocus
+}: { 
+  value: string; 
+  onChange: (val: string) => void;
+  className?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
+}) {
+  const [localVal, setLocalVal] = useState(value);
+  const onChangeRef = useRef(onChange);
+  const isDirty = useRef(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  // Only sync from external if user is NOT actively editing
+  useEffect(() => {
+    if (!isDirty.current) {
+      setLocalVal(value);
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    isDirty.current = true;
+    setLocalVal(newVal);
+
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      isDirty.current = false;
+      onChangeRef.current(newVal);
+    }, 600);
+  };
+
+  return (
+    <input
+      type="text"
+      value={localVal}
+      onChange={handleChange}
+      className={className}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+    />
+  );
+}
+
 export default function Dashboard() {
   const { 
     projects,
@@ -42,6 +95,7 @@ export default function Dashboard() {
     setGlobalContents, 
     allProjectCampaigns, 
     setAllProjectCampaigns, 
+    addCampaign,
     addContent, 
     updateContent, 
     deleteContent, 
@@ -83,16 +137,56 @@ export default function Dashboard() {
     setSelectedEvent(newContent);
   };
 
-  const handleAddActionToSlot = async (dayName: string, colId: string, campaignId: string) => {
+  const handleAddActionToSlot = async (dayName: string, colId: string, campaignId?: string) => {
+    let finalCampaignId = campaignId;
+
+    if (!finalCampaignId) {
+      if (!currentProject) return;
+      finalCampaignId = `camp_base_${currentProject.id}_${Date.now()}`;
+      
+      const newAction = {
+        id: Math.random().toString(36).substr(2, 9),
+        text: "Nueva Acción...",
+        time: "",
+        campaignId: finalCampaignId
+      };
+
+      const newCampaign = {
+        id: finalCampaignId,
+        projectId: currentProject.id,
+        name: "Estrategia Base",
+        isBase: true,
+        color: "text-primary",
+        data: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(day => ({
+          day, 
+          entries: day === dayName ? { [colId]: [newAction] } : {}
+        }))
+      };
+      
+      await addCampaign(newCampaign);
+      
+      setActiveMatrixSlot({
+        campaignId: finalCampaignId,
+        actionId: newAction.id,
+        day: dayName,
+        colId: colId,
+        text: newAction.text,
+        time: newAction.time,
+        color: initialMatrixColumns.find(c => c.id === colId)?.color || 'text-primary'
+      });
+      setIsRightPanelOpen(true);
+      return;
+    }
+
     const actionId = Math.random().toString(36).substr(2, 9);
     const newAction = {
       id: actionId,
       text: "Nueva Acción...",
       time: "",
-      campaignId: campaignId
+      campaignId: finalCampaignId
     };
 
-    const campaign = campaigns.find(c => c.id === campaignId);
+    const campaign = campaigns.find(c => c.id === finalCampaignId);
     if (!campaign) return;
 
     const newData = campaign.data.map(d => d.day === dayName ? {
@@ -427,7 +521,7 @@ export default function Dashboard() {
                                       onClick={() => { 
                                         // Default to Base Campaign if empty
                                         const baseCamp = campaigns.find(c => c.isBase) || campaigns[0];
-                                        handleAddActionToSlot(dayName, col.id, baseCamp.id);
+                                        handleAddActionToSlot(dayName, col.id, baseCamp?.id);
                                       }}
                                       className="w-full h-full min-h-[44px] rounded-xl border border-dashed border-slate-200 dark:border-white/5 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 hover:border-primary/40 hover:bg-primary/[0.03] transition-all cursor-pointer group/add"
                                     >
@@ -860,10 +954,9 @@ export default function Dashboard() {
                       <h3 className="text-[9px] font-bold text-outline-variant uppercase tracking-widest mb-0.5">
                         {activeMatrixSlot.day} • {activeMatrixSlot.colId}
                       </h3>
-                      <input 
-                        type="text"
+                      <DebouncedInput 
                         value={activeMatrixSlot.text}
-                        onChange={(e) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { text: e.target.value })}
+                        onChange={(val) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { text: val })}
                         placeholder="Acción estratégica..."
                         className="w-full bg-transparent border-none focus:ring-0 p-0 text-base font-extrabold tracking-tight font-headline placeholder:text-outline-variant/30"
                         autoFocus
@@ -877,10 +970,9 @@ export default function Dashboard() {
                           <span className="text-[8px] font-bold text-outline uppercase tracking-widest">Horario</span>
                           <span className="material-symbols-outlined text-[12px] text-slate-300">schedule</span>
                         </div>
-                        <input 
-                          type="text"
+                        <DebouncedInput 
                           value={activeMatrixSlot.time || ""}
-                          onChange={(e) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { time: e.target.value })}
+                          onChange={(val) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { time: val })}
                           placeholder="Ej: 18:00"
                           className="w-full bg-transparent border-none focus:ring-0 p-0 text-[11px] font-bold text-primary placeholder:text-slate-300"
                         />

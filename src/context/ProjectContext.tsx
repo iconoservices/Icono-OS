@@ -28,6 +28,7 @@ interface ProjectContextType {
   // Campaigns grouped by project ID
   allProjectCampaigns: Record<string, CampaignMatrix[]>;
   setAllProjectCampaigns: React.Dispatch<React.SetStateAction<Record<string, CampaignMatrix[]>>>;
+  addCampaign: (campaign: any) => Promise<string>;
   updateCampaign: (campaignId: string, updates: any) => Promise<void>;
   deleteCampaign: (campaignId: string) => Promise<void>;
   addContent: (content: any) => Promise<void>;
@@ -121,6 +122,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   };
 
   // CRUD for Campaigns
+  const addCampaign = async (campaign: any) => {
+    const id = campaign.id?.toString() || `camp_${Date.now()}`;
+    const sanitized = JSON.parse(JSON.stringify(campaign));
+    await setDoc(doc(db, "campaigns", id), sanitized);
+    return id;
+  };
+
   const updateCampaign = async (campaignId: string, updates: any) => {
     await updateDoc(doc(db, "campaigns", campaignId), updates);
   };
@@ -157,6 +165,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       setGlobalContents,
       allProjectCampaigns,
       setAllProjectCampaigns,
+      addCampaign,
       updateCampaign,
       deleteCampaign,
       addContent,
