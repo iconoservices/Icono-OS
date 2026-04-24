@@ -38,13 +38,15 @@ function DebouncedInput({
   onChange, 
   className, 
   placeholder,
-  autoFocus
+  autoFocus,
+  disabled
 }: { 
   value: string; 
   onChange: (val: string) => void;
   className?: string;
   placeholder?: string;
   autoFocus?: boolean;
+  disabled?: boolean;
 }) {
   const [localVal, setLocalVal] = useState(value);
   const onChangeRef = useRef(onChange);
@@ -63,6 +65,7 @@ function DebouncedInput({
   }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled) return;
     const newVal = e.target.value;
     isDirty.current = true;
     setLocalVal(newVal);
@@ -82,7 +85,356 @@ function DebouncedInput({
       className={className}
       placeholder={placeholder}
       autoFocus={autoFocus}
+      disabled={disabled}
     />
+  );
+}
+
+function LibraryDropdown({
+  activeLibraryId,
+  projectStrategyLibrary,
+  currentText,
+  onSelect,
+  onSave,
+}: {
+  activeLibraryId?: string;
+  projectStrategyLibrary: any[];
+  currentText: string;
+  onSelect: (item: any) => void;
+  onSave: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const activeItem = projectStrategyLibrary.find(i => i.id === activeLibraryId);
+
+  return (
+    <div className="relative">
+      {/* Trigger button */}
+      <button
+        id="strategy-dropdown-trigger"
+        onClick={() => setOpen(prev => !prev)}
+        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-[10px] font-bold transition-all ${
+          activeItem
+            ? 'bg-primary/10 border-primary/20 text-primary'
+            : 'bg-white border-outline-variant/10 text-slate-400 hover:border-primary/20 hover:text-primary'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-[13px]">style</span>
+          <span>{activeItem ? activeItem.name : 'Asignar pilar de contenido...'}</span>
+        </div>
+        <span className={`material-symbols-outlined text-[16px] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          expand_more
+        </span>
+      </button>
+
+      {/* Dropdown panel */}
+      {open && (
+        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 bg-white border border-outline-variant/10 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          {/* Save current */}
+          <button
+            onClick={() => { onSave(); setOpen(false); }}
+            className="w-full flex items-center gap-2 px-3 py-2.5 border-b border-outline-variant/10 hover:bg-primary/5 text-primary transition-colors group"
+          >
+            <span className="material-symbols-outlined text-[14px]">bookmark_add</span>
+            <span className="text-[10px] font-bold">Guardar "{currentText.slice(0, 20)}{currentText.length > 20 ? '…' : ''}" como pilar</span>
+          </button>
+
+          {/* Library items */}
+          <div className="max-h-48 overflow-y-auto">
+            {projectStrategyLibrary.length === 0 ? (
+              <p className="px-3 py-3 text-[10px] text-outline-variant italic text-center">
+                No hay pilares en este proyecto aún.
+              </p>
+            ) : (
+              projectStrategyLibrary.map(item => {
+                const isActive = item.id === activeLibraryId;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => { onSelect(item); setOpen(false); }}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 transition-colors text-left hover:bg-surface-container-low ${isActive ? 'bg-primary/5' : ''}`}
+                  >
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-primary' : 'bg-outline-variant/30'}`} />
+                    <span className={`text-[11px] font-bold flex-1 ${isActive ? 'text-primary' : 'text-on-surface'}`}>{item.name}</span>
+                    {isActive && <span className="material-symbols-outlined text-[14px] text-primary">check</span>}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* Desvincular */}
+          {activeLibraryId && (
+            <button
+              onClick={() => { onSelect({ id: undefined, name: currentText }); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-3 py-2 border-t border-outline-variant/10 hover:bg-error/5 text-error/70 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[13px]">link_off</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider">Desvincular de librería</span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PilaresTab({ projectStrategyLibrary, projectId, onAdd, onDelete, onUpdate, campaigns }: {
+  projectStrategyLibrary: any[];
+  projectId: string | undefined;
+  onAdd: (template: any) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+  onUpdate: (id: string, updates: any) => Promise<void>;
+  campaigns: any[];
+}) {
+  const [newName, setNewName] = useState("");
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+  const [selectedColor, setSelectedColor] = useState("text-primary");
+  const [isAdding, setIsAdding] = useState(false);
+
+  const dayNames = ["L", "M", "M", "J", "V", "S", "D"];
+  const fullDayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  
+  const colors = [
+    { name: 'Indigo', class: 'text-indigo-500', bg: 'bg-indigo-500' },
+    { name: 'Emerald', class: 'text-emerald-500', bg: 'bg-emerald-500' },
+    { name: 'Amber', class: 'text-amber-500', bg: 'bg-amber-500' },
+    { name: 'Rose', class: 'text-rose-500', bg: 'bg-rose-500' },
+    { name: 'Purple', class: 'text-purple-500', bg: 'bg-purple-500' },
+    { name: 'Sky', class: 'text-sky-500', bg: 'bg-sky-500' },
+    { name: 'Orange', class: 'text-orange-500', bg: 'bg-orange-500' },
+  ];
+
+  const getNumericDay = (matrixDay: string) => {
+    const map: Record<string, number> = { 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6, 'Domingo': 7 };
+    return map[matrixDay] || 1;
+  };
+
+  const getDetectedDays = (itemId: string) => {
+    const daysFound = new Set<number>();
+    campaigns.forEach(camp => {
+      camp.data.forEach((d: any) => {
+        Object.values(d.entries).forEach(actions => {
+          if (Array.isArray(actions)) {
+            actions.forEach((a: any) => {
+              if (a.libraryId === itemId) {
+                daysFound.add(getNumericDay(d.day));
+              }
+            });
+          }
+        });
+      });
+    });
+    return Array.from(daysFound).sort();
+  };
+
+  const handleAdd = async () => {
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    setIsAdding(true);
+    const id = `template_${Date.now()}`;
+    await onAdd({ 
+      id, 
+      name: trimmed, 
+      projectId,
+      activeDays: selectedDays,
+      color: selectedColor
+    });
+    setNewName("");
+    setSelectedDays([]);
+    setSelectedColor("text-primary");
+    setIsAdding(false);
+  };
+
+  const toggleDay = (day: number) => {
+    setSelectedDays(prev => 
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort()
+    );
+  };
+
+  const toggleItemDay = async (item: any, day: number) => {
+    const currentDays = item.activeDays || [];
+    const newDays = currentDays.includes(day) 
+      ? currentDays.filter((d: number) => d !== day) 
+      : [...currentDays, day].sort();
+    await onUpdate(item.id, { activeDays: newDays });
+  };
+
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex items-center justify-between mb-3 shrink-0">
+        <div>
+          <h3 className="text-lg font-extrabold tracking-tight font-headline">Pilares</h3>
+          <p className="text-xs text-on-surface-variant font-medium">Estrategias de este proyecto</p>
+        </div>
+        <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-full border border-emerald-200">
+          {projectStrategyLibrary.length} guardados
+        </span>
+      </div>
+
+      {/* Add new */}
+      <div className="bg-white border border-outline-variant/10 rounded-2xl p-4 mb-4 shrink-0 shadow-sm relative group/addpilar">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="relative">
+            <button 
+              onClick={() => {
+                const el = document.getElementById('new-pilar-colors');
+                if (el) el.classList.toggle('hidden');
+              }}
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-95 ${selectedColor.replace('text-', 'bg-')}/10`}
+            >
+              <span className={`material-symbols-outlined ${selectedColor}`}>palette</span>
+            </button>
+            <div id="new-pilar-colors" className="hidden absolute left-0 top-full mt-2 z-30 bg-white border border-outline-variant/10 rounded-2xl p-2 shadow-2xl flex flex-wrap gap-2 w-32 animate-in fade-in slide-in-from-top-2">
+              {colors.map(c => (
+                <button
+                  key={c.class}
+                  onClick={() => {
+                    setSelectedColor(c.class);
+                    document.getElementById('new-pilar-colors')?.classList.add('hidden');
+                  }}
+                  className={`w-6 h-6 rounded-full transition-all ${c.bg} hover:scale-110 shadow-sm`}
+                />
+              ))}
+            </div>
+          </div>
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            placeholder="Nombre del pilar..."
+            className="flex-1 bg-transparent border-b-2 border-slate-100 px-1 py-2 text-[13px] font-bold text-primary placeholder:text-slate-300 focus:outline-none focus:border-primary transition-all"
+          />
+          <button
+            onClick={handleAdd}
+            disabled={isAdding || !newName.trim()}
+            className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-40 shadow-lg shadow-primary/20 shrink-0"
+          >
+            <span className="material-symbols-outlined text-sm">{isAdding ? 'hourglass_empty' : 'add'}</span>
+          </button>
+        </div>
+        
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Frecuencia semanal:</span>
+          <div className="flex gap-1">
+            {dayNames.map((name, idx) => {
+              const dayNum = idx + 1;
+              const isActive = selectedDays.includes(dayNum);
+              return (
+                <button
+                  key={idx}
+                  onClick={() => toggleDay(dayNum)}
+                  className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all ${
+                    isActive 
+                      ? 'bg-primary text-white shadow-sm' 
+                      : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                  }`}
+                >
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Library list */}
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 pb-4">
+        {projectStrategyLibrary.length === 0 && (
+          <div className="text-center p-8 border-2 border-dashed border-outline-variant/30 rounded-2xl">
+            <span className="material-symbols-outlined text-3xl text-outline-variant/40 mb-2 block">style</span>
+            <p className="text-xs text-on-surface-variant font-medium">No hay pilares en este proyecto.<br/>Escribe uno arriba para empezar.</p>
+          </div>
+        )}
+        {projectStrategyLibrary.map((item) => {
+          const detectedDays = getDetectedDays(item.id);
+          const manualDays = item.activeDays || [];
+          const itemColor = colors.find(c => c.class === item.color) || colors[0];
+          const dropdownId = `color-dropdown-${item.id}`;
+          
+          return (
+            <div
+              key={item.id}
+              className="group flex flex-col gap-3 bg-white p-4 rounded-2xl border border-outline-variant/5 shadow-sm hover:shadow-md transition-all relative overflow-hidden"
+            >
+              {/* Vertical Color Strip */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1 ${item.color?.replace('text-', 'bg-') || 'bg-primary'}`} />
+              
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <button 
+                    onClick={() => {
+                      const el = document.getElementById(dropdownId);
+                      if (el) el.classList.toggle('hidden');
+                    }}
+                    className={`w-8 h-8 rounded-xl ${item.color?.replace('text-', 'bg-') || 'bg-primary'}/10 flex items-center justify-center shrink-0 hover:scale-105 transition-transform`}
+                  >
+                    <span className={`material-symbols-outlined text-[14px] ${item.color || 'text-primary'}`}>palette</span>
+                  </button>
+                  <div id={dropdownId} className="hidden absolute left-0 top-full mt-2 z-30 bg-white border border-outline-variant/10 rounded-2xl p-2 shadow-2xl flex flex-wrap gap-2 w-32 animate-in fade-in slide-in-from-top-2">
+                    {colors.map(c => (
+                      <button
+                        key={c.class}
+                        onClick={() => {
+                          onUpdate(item.id, { color: c.class });
+                          document.getElementById(dropdownId)?.classList.add('hidden');
+                        }}
+                        className={`w-6 h-6 rounded-full transition-all ${c.bg} hover:scale-110 shadow-sm`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-extrabold text-on-surface truncate tracking-tight">{item.name}</p>
+                  <p className="text-[9px] text-on-surface-variant font-medium uppercase tracking-widest opacity-60">Estrategia Activa</p>
+                </div>
+                <button
+                  onClick={() => onDelete(item.id)}
+                  className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-outline-variant hover:text-error hover:bg-error/10 transition-all"
+                >
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                </button>
+              </div>
+              
+              <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                <div className="flex gap-1.5">
+                  {dayNames.map((name, idx) => {
+                    const dayNum = idx + 1;
+                    const isManual = manualDays.includes(dayNum);
+                    const isDetected = detectedDays.includes(dayNum);
+                    const isActive = isManual || isDetected;
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => toggleItemDay(item, dayNum)}
+                        className={`w-6 h-6 rounded-lg text-[9px] font-black transition-all relative ${
+                          isActive 
+                            ? `${item.color?.replace('text-', 'bg-') || 'bg-primary'} text-white shadow-sm ring-2 ring-primary/20` 
+                            : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                        }`}
+                        title={`${fullDayNames[idx]} ${isDetected ? '(Detectado en matriz)' : ''}`}
+                      >
+                        {name}
+                        {isDetected && !isManual && (
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border border-white" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                {(manualDays.length > 0 || detectedDays.length > 0) && (
+                  <span className={`text-[8px] font-black uppercase tracking-tighter ${item.color || 'text-primary'}`}>
+                    {Array.from(new Set([...manualDays, ...detectedDays])).length} días/sem
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -99,7 +451,11 @@ export default function Dashboard() {
     addContent, 
     updateContent, 
     deleteContent, 
-    updateCampaign 
+    updateCampaign,
+    strategyLibrary,
+    addStrategyTemplate,
+    updateStrategyTemplate,
+    deleteStrategyTemplate
   } = useProject();
   const [view, setView] = useState<"monthly" | "weekly" | "matrix" | "yearly">("matrix");
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -107,8 +463,17 @@ export default function Dashboard() {
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
   
   // Editable Data States
-  const [activeMatrixSlot, setActiveMatrixSlot] = useState<{ campaignId: string, actionId: string, day: string, colId: string, text: string, time?: string, color: string } | null>(null);
-  const [rightPanelTab, setRightPanelTab] = useState<"tareas" | "hitos" | "plan" | "metas">("tareas");
+  const [activeMatrixSlot, setActiveMatrixSlot] = useState<{ 
+    campaignId: string, 
+    actionId: string, 
+    day: string, 
+    colId: string, 
+    text: string, 
+    time?: string, 
+    color: string,
+    libraryId?: string 
+  } | null>(null);
+  const [rightPanelTab, setRightPanelTab] = useState<"tareas" | "hitos" | "plan" | "metas" | "pilares">("tareas");
   const [planClientFilter, setPlanClientFilter] = useState<string | null>(null);
   
   
@@ -213,10 +578,20 @@ export default function Dashboard() {
 
   // Compute active campaigns based on project
   const campaigns = currentProject ? (allProjectCampaigns[currentProject.id] || []) : [];
+  // Filter strategy library to current project only
+  const projectStrategyLibrary = strategyLibrary.filter(t => t.projectId === currentProject?.id);
 
-  const handleUpdateAction = async (campaignId: string, actionId: string, day: string, colId: string, updates: { text?: string, time?: string }) => {
+  const handleUpdateAction = async (campaignId: string, actionId: string, day: string, colId: string, updates: { text?: string, time?: string, libraryId?: string }) => {
     const campaign = campaigns.find(c => c.id === campaignId);
     if (!campaign) return;
+
+    // If this is a linked action, update the master template too
+    if (updates.text && (updates.libraryId || (activeMatrixSlot?.actionId === actionId && activeMatrixSlot?.libraryId))) {
+      const libId = updates.libraryId || activeMatrixSlot?.libraryId;
+      if (libId) {
+        await updateStrategyTemplate(libId, { name: updates.text });
+      }
+    }
 
     const newData = campaign.data.map(d => d.day === day ? {
       ...d,
@@ -446,24 +821,28 @@ export default function Dashboard() {
                         
                         {initialMatrixColumns.map(col => {
                           // Aggregate strategies from all unhidden campaigns
-                          const activeStrategies = campaigns
-                            .filter(camp => !hiddenCampaignIds.includes(camp.id))
-                            .flatMap(camp => {
-                              const dayData = camp.data.find((d: any) => d.day === dayName);
-                              const rawEntry = dayData?.entries[col.id];
-                              const actions = Array.isArray(rawEntry) ? rawEntry : [];
-                              return actions.map((action: any) => ({
-                                actionId: action.id,
-                                campaignId: camp.id,
-                                campaignName: camp.name,
-                                strategy: action.text,
-                                time: action.time,
-                                color: camp.color || col.color
-                              }));
-                            });
+                              const activeStrategies = campaigns
+                                .filter(camp => !hiddenCampaignIds.includes(camp.id))
+                                .flatMap(camp => {
+                                  const dayData = camp.data.find((d: any) => d.day === dayName);
+                                  const rawEntry = dayData?.entries[col.id];
+                                  const actions = Array.isArray(rawEntry) ? rawEntry : [];
+                                  return actions.map((action: any) => {
+                                    const libItem = action.libraryId ? projectStrategyLibrary.find(l => l.id === action.libraryId) : null;
+                                    return {
+                                      actionId: action.id,
+                                      campaignId: camp.id,
+                                      campaignName: camp.name,
+                                      strategy: libItem ? libItem.name : action.text,
+                                      time: action.time,
+                                      color: libItem?.color || camp.color || col.color,
+                                      libraryId: action.libraryId
+                                    };
+                                  });
+                                });
 
                           return (
-                            <td key={`${dayName}-${col.id}`} className="p-4 align-top">
+                            <td key={`${dayName}-${col.id}`} className="p-4 align-top relative group/cell">
                               <div className="flex flex-col gap-2">
                                 {activeStrategies.length > 0 ? (() => {
                                       // Group strategies by campaignId
@@ -494,13 +873,19 @@ export default function Dashboard() {
                                                   colId: col.id, 
                                                   text: item.strategy, 
                                                   time: item.time,
-                                                  color: col.color 
+                                                  color: item.color,
+                                                  libraryId: item.libraryId
                                                 }); 
                                                 setIsRightPanelOpen(true); 
                                               }}
-                                              className={`group/item relative p-2.5 rounded-xl border-l-[4px] transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md bg-white dark:bg-slate-900 border-outline-variant/10 ${col.color?.replace('text-', 'border-') || 'border-primary'}`}
+                                              className="group/item relative p-2.5 pl-4 rounded-xl transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md bg-white dark:bg-slate-900 border border-outline-variant/10 overflow-hidden"
                                             >
-                                              <p className={`text-[11px] font-bold leading-tight line-clamp-2 ${col.color}`}>{item.strategy}</p>
+                                              {/* Single Color Strip - Channel Only */}
+                                              <div className="absolute left-0 top-0 bottom-0 w-[4px]">
+                                                <div className={`h-full w-full ${col.bg || 'bg-primary'}`} />
+                                              </div>
+
+                                              <p className={`text-[11px] font-bold leading-tight line-clamp-2 ${item.color || col.color}`}>{item.strategy}</p>
                                               
                                               {item.time && (
                                                 <div className="mt-1.5 flex items-center gap-1 text-[9px] font-black text-slate-400">
@@ -528,17 +913,16 @@ export default function Dashboard() {
                                       <span className="material-symbols-outlined text-sm text-slate-300 group-hover/add:text-primary transition-colors">add</span>
                                     </div>
                                   )}
-
-                                  {activeStrategies.length > 0 && (
-                                    <button 
-                                      onClick={() => handleAddActionToSlot(dayName, col.id, activeStrategies[0].campaignId)}
-                                      className="w-full py-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:opacity-100 hover:bg-primary/[0.02] transition-all flex items-center justify-center gap-2"
-                                    >
-                                      <span className="material-symbols-outlined text-xs text-slate-300">add</span>
-                                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nuevo</span>
-                                    </button>
-                                  )}
                               </div>
+                              
+                              {activeStrategies.length > 0 && (
+                                <button 
+                                  onClick={() => handleAddActionToSlot(dayName, col.id, activeStrategies[0].campaignId)}
+                                  className="absolute bottom-2 right-2 w-6 h-6 rounded-full bg-primary text-white opacity-0 group-hover/cell:opacity-100 hover:scale-110 transition-all flex items-center justify-center shadow-lg z-10 border-2 border-white"
+                                >
+                                  <span className="material-symbols-outlined text-[14px]">add</span>
+                                </button>
+                              )}
                             </td>
                           );
                         })}
@@ -840,7 +1224,8 @@ export default function Dashboard() {
                                     colId: action.colId, 
                                     text: action.strategy, 
                                     time: action.time,
-                                    color: action.color 
+                                    color: action.color,
+                                    libraryId: action.libraryId
                                   }); 
                                   setIsRightPanelOpen(true);
                                 }
@@ -951,16 +1336,100 @@ export default function Dashboard() {
                     </div>
 
                     <div className="mb-4">
-                      <h3 className="text-[9px] font-bold text-outline-variant uppercase tracking-widest mb-0.5">
-                        {activeMatrixSlot.day} • {activeMatrixSlot.colId}
-                      </h3>
-                      <DebouncedInput 
-                        value={activeMatrixSlot.text}
-                        onChange={(val) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { text: val })}
-                        placeholder="Acción estratégica..."
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-base font-extrabold tracking-tight font-headline placeholder:text-outline-variant/30"
-                        autoFocus
-                      />
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`w-2 h-2 rounded-full ${activeMatrixSlot.color?.replace('text-', 'bg-') || 'bg-primary'}`} />
+                        <h3 className="text-[9px] font-bold text-outline-variant uppercase tracking-widest">
+                          {activeMatrixSlot.day} • {activeMatrixSlot.colId}
+                        </h3>
+                      </div>
+                      
+                      {!activeMatrixSlot.libraryId && activeMatrixSlot.text !== "Nueva Acción..." && (
+                        <div className="relative group/input mb-2">
+                          <DebouncedInput 
+                            value={activeMatrixSlot.text}
+                            onChange={(val) => handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, { text: val })}
+                            placeholder="Acción estratégica..."
+                            className={`w-full bg-transparent border-none focus:ring-0 p-0 text-base font-extrabold tracking-tight font-headline placeholder:text-outline-variant/30 ${activeMatrixSlot.color || 'text-primary'}`}
+                            autoFocus
+                          />
+                        </div>
+                      )}
+                      
+                      {activeMatrixSlot.libraryId ? (
+                        <div className="flex items-center gap-1.5 mb-3 px-1">
+                          <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full animate-pulse">
+                            <span className="material-symbols-outlined text-[10px] text-primary">sync</span>
+                            <span className="text-[8px] font-black text-primary uppercase tracking-widest">Vínculo Maestro Activo</span>
+                          </div>
+                        </div>
+                      ) : activeMatrixSlot.text === "Nueva Acción..." ? (
+                        <div className="flex flex-col gap-3 mb-4">
+                          <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
+                              <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                              Recomendación Estratégica
+                            </p>
+                            
+                            <LibraryDropdown
+                              activeLibraryId={activeMatrixSlot.libraryId}
+                              projectStrategyLibrary={projectStrategyLibrary}
+                              currentText={activeMatrixSlot.text}
+                              onSelect={(item) => {
+                                const updates = { 
+                                  text: item.name || activeMatrixSlot.text, 
+                                  libraryId: item.id,
+                                  color: item.color || activeMatrixSlot.color
+                                };
+                                handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, updates);
+                                setActiveMatrixSlot({ ...activeMatrixSlot, ...updates });
+                              }}
+                              onSave={() => {
+                                const newId = `template_${Date.now()}`;
+                                addStrategyTemplate({ id: newId, name: activeMatrixSlot.text, projectId: currentProject?.id, color: activeMatrixSlot.color });
+                                const updates = { libraryId: newId };
+                                handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, updates);
+                                setActiveMatrixSlot({ ...activeMatrixSlot, ...updates });
+                              }}
+                            />
+                            
+                            <button 
+                              onClick={() => {
+                                const updates = { text: "" };
+                                handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, updates);
+                                setActiveMatrixSlot({ ...activeMatrixSlot, ...updates });
+                              }}
+                              className="w-full mt-3 py-2 text-[9px] font-black text-slate-400 hover:text-primary uppercase tracking-widest flex items-center justify-center gap-2 transition-colors border border-dashed border-slate-200 rounded-xl hover:border-primary/30 hover:bg-white"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">edit_note</span>
+                              O escribir acción manual
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mb-4">
+                          <LibraryDropdown
+                            activeLibraryId={activeMatrixSlot.libraryId}
+                            projectStrategyLibrary={projectStrategyLibrary}
+                            currentText={activeMatrixSlot.text}
+                            onSelect={(item) => {
+                              const updates = { 
+                                text: item.name || activeMatrixSlot.text, 
+                                libraryId: item.id,
+                                color: item.color || activeMatrixSlot.color
+                              };
+                              handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, updates);
+                              setActiveMatrixSlot({ ...activeMatrixSlot, ...updates });
+                            }}
+                            onSave={() => {
+                              const newId = `template_${Date.now()}`;
+                              addStrategyTemplate({ id: newId, name: activeMatrixSlot.text, projectId: currentProject?.id, color: activeMatrixSlot.color });
+                              const updates = { libraryId: newId };
+                              handleUpdateAction(activeMatrixSlot.campaignId, activeMatrixSlot.actionId, activeMatrixSlot.day, activeMatrixSlot.colId, updates);
+                              setActiveMatrixSlot({ ...activeMatrixSlot, ...updates });
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
@@ -1035,13 +1504,13 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
-                  {/* 3-Tab Nav */}
-                  <div className="flex bg-surface-container-high/50 p-1 rounded-xl border border-outline-variant/10 mb-5 shrink-0">
-                    {([['tareas','Tareas'],['plan','Plan'],['hitos','Suger.'],['metas','Metas']] as const).map(([tab, label]) => (
+                  {/* Tab Nav */}
+                  <div className="flex bg-surface-container-high/50 p-1 rounded-xl border border-outline-variant/10 mb-5 shrink-0 gap-0.5">
+                    {([['tareas','Tareas'],['plan','Plan'],['hitos','Suger.'],['pilares','Pilares'],['metas','Metas']] as const).map(([tab, label]) => (
                       <button
                         key={tab}
                         onClick={() => setRightPanelTab(tab)}
-                        className={`flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all relative ${
+                        className={`flex-1 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all relative ${
                           rightPanelTab === tab ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'
                         }`}
                       >
@@ -1052,6 +1521,9 @@ export default function Dashboard() {
                             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[8px] font-black flex items-center justify-center">{planCount}</span>
                           ) : null;
                         })()}
+                        {tab === 'pilares' && projectStrategyLibrary.length > 0 && (
+                          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-white text-[8px] font-black flex items-center justify-center">{projectStrategyLibrary.length}</span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -1175,7 +1647,7 @@ export default function Dashboard() {
 
                   {/* ---- SUGERENCIAS TAB (TEMPEST) ---- */}
                   {rightPanelTab === 'hitos' && (() => {
-                    const acceptedIds = new Set(globalContents.filter(c => c.sourceSuggestionId).map(c => c.sourceSuggestionId));
+                    const acceptedIds = new Set(globalContents.filter(c => c.sourceSuggestionId && c.projectId === currentProject?.id).map(c => c.sourceSuggestionId));
                     const upcoming = SUGGESTED_DATES.filter(s => new Date(s.date) >= new Date(new Date().setHours(0,0,0,0)));
                     return (
                       <div className="flex flex-col flex-1 overflow-hidden">
@@ -1380,6 +1852,19 @@ export default function Dashboard() {
                     );
                   })()}
 
+                  {/* ---- PILARES TAB ---- */}
+                  {rightPanelTab === 'pilares' && (
+                    <PilaresTab
+                      projectStrategyLibrary={projectStrategyLibrary}
+                      projectId={currentProject?.id}
+                      onAdd={addStrategyTemplate}
+                      onDelete={deleteStrategyTemplate}
+                      onUpdate={updateStrategyTemplate}
+                      campaigns={campaigns}
+                    />
+                  )}
+
+                  {rightPanelTab !== 'pilares' && (
                   <div className="mt-auto pt-4 shrink-0">
                     <div className="p-4 rounded-xl bg-primary-container text-on-primary-container/80 relative overflow-hidden group">
                       <div className="relative z-10">
@@ -1391,6 +1876,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
               )}
             </aside>

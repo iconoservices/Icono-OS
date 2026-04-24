@@ -34,6 +34,11 @@ interface ProjectContextType {
   addContent: (content: any) => Promise<void>;
   updateContent: (id: string, updates: any) => Promise<void>;
   deleteContent: (id: string) => Promise<void>;
+  // Strategy Library
+  strategyLibrary: any[];
+  addStrategyTemplate: (template: any) => Promise<void>;
+  updateStrategyTemplate: (id: string, updates: any) => Promise<void>;
+  deleteStrategyTemplate: (id: string) => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -44,6 +49,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [hiddenCampaignIds, setHiddenCampaignIds] = useState<string[]>([]);
   const [globalContents, setGlobalContents] = useState<any[]>([]);
   const [allProjectCampaigns, setAllProjectCampaigns] = useState<Record<string, CampaignMatrix[]>>({});
+  const [strategyLibrary, setStrategyLibrary] = useState<any[]>([]);
 
   // 1. Initial Sync & Seeding
   useEffect(() => {
@@ -92,6 +98,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    // Listen to Strategy Library
+    const unsubLibrary = onSnapshot(collection(db, "strategyLibrary"), (snapshot) => {
+      const libraryList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setStrategyLibrary(libraryList);
+    });
+
     // Listen to Contents (Calendar Events)
     const unsubContents = onSnapshot(collection(db, "contents"), (snapshot) => {
       const contentsList = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -112,6 +124,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       unsubProjects();
       unsubCampaigns();
       unsubContents();
+      unsubLibrary();
     };
   }, [currentProject]);
 
@@ -153,6 +166,20 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     await deleteDoc(doc(db, "contents", id));
   };
 
+  // CRUD for Strategy Library
+  const addStrategyTemplate = async (template: any) => {
+    const id = template.id || `template_${Date.now()}`;
+    await setDoc(doc(db, "strategyLibrary", id), { ...template, id });
+  };
+
+  const updateStrategyTemplate = async (id: string, updates: any) => {
+    await updateDoc(doc(db, "strategyLibrary", id), updates);
+  };
+
+  const deleteStrategyTemplate = async (id: string) => {
+    await deleteDoc(doc(db, "strategyLibrary", id));
+  };
+
   return (
     <ProjectContext.Provider value={{ 
       projects, 
@@ -170,7 +197,11 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       deleteCampaign,
       addContent,
       updateContent,
-      deleteContent
+      deleteContent,
+      strategyLibrary,
+      addStrategyTemplate,
+      updateStrategyTemplate,
+      deleteStrategyTemplate
     }}>
       {children}
     </ProjectContext.Provider>
