@@ -304,7 +304,7 @@ function PilaresTab({ projectStrategyLibrary, projectId, onAdd, onDelete, onUpda
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="Nombre del pilar..."
-            className="flex-1 bg-transparent border-b-2 border-slate-100 px-1 py-2 text-[13px] font-bold text-primary placeholder:text-slate-300 focus:outline-none focus:border-primary transition-all"
+            className="flex-1 min-w-0 bg-transparent border-b-2 border-slate-100 px-1 py-2 text-[13px] font-bold text-primary placeholder:text-slate-300 focus:outline-none focus:border-primary transition-all"
           />
           <button
             onClick={handleAdd}

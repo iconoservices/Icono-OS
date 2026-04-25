@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useProject } from "@/context/ProjectContext";
 
 interface Inspiration {
@@ -590,11 +590,20 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
 function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, url: string, onUpdate: (data: Partial<Inspiration>) => void }) {
   const [isFetching, setIsFetching] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const onUpdateRef = useRef(onUpdate);
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
 
   useEffect(() => {
     // Re-fetch if we don't have an image OR if the previous one failed
     if (imageUrl && !hasError) return;
     
+    // Stop after 2 retries to prevent infinite loops
+    if (retryCount >= 2) return;
+
     const trimmedUrl = url?.trim();
     if (!trimmedUrl || !trimmedUrl.startsWith("http")) return;
 
@@ -603,20 +612,24 @@ function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, u
 
     const fetchThumbnail = async () => {
       setIsFetching(true);
-      setHasError(false);
       try {
         const res = await fetch(`/api/proxy/oembed?url=${encodeURIComponent(trimmedUrl)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.thumbnail_url) {
-            onUpdate({ imageUrl: data.thumbnail_url });
+            onUpdateRef.current({ imageUrl: data.thumbnail_url });
+            setHasError(false);
+            setRetryCount(0); // Reset on success
+            return;
           }
-        } else {
-          setHasError(true);
         }
+        // Failed
+        setHasError(true);
+        setRetryCount(prev => prev + 1);
       } catch (error) {
         console.error("Error fetching thumbnail:", error);
         setHasError(true);
+        setRetryCount(prev => prev + 1);
       } finally {
         setIsFetching(false);
       }
@@ -624,7 +637,7 @@ function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, u
 
     const timer = setTimeout(fetchThumbnail, 1500);
     return () => clearTimeout(timer);
-  }, [imageUrl, url, onUpdate, hasError]);
+  }, [imageUrl, url, hasError, retryCount]);
 
   if (imageUrl && !hasError) {
     return (
@@ -643,9 +656,10 @@ function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, u
   return (
     <div className="w-full h-full flex flex-col items-center justify-center text-white/20 bg-slate-800">
       <span className={`material-symbols-outlined text-2xl ${isFetching ? 'animate-spin' : ''}`}>
-        {isFetching ? 'sync' : (hasError ? 'refresh' : 'image')}
+        {isFetching ? 'sync' : (retryCount >= 2 ? 'broken_image' : 'image')}
       </span>
-      {hasError && <span className="text-[7px] font-bold uppercase mt-1 text-white/40">Reintento...</span>}
+      {retryCount >= 2 && <span className="text-[7px] font-bold uppercase mt-1 text-white/40">Error</span>}
+      {isFetching && hasError && <span className="text-[7px] font-bold uppercase mt-1 text-white/40">Reintento...</span>}
     </div>
   );
 }
