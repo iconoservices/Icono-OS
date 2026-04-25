@@ -562,10 +562,10 @@ export default function Dashboard() {
       }
     } : d);
 
-    await updateCampaign(campaignId, { data: newData });
+    await updateCampaign(finalCampaignId!, { data: newData });
 
     setActiveMatrixSlot({
-      campaignId,
+      campaignId: finalCampaignId!,
       actionId,
       day: dayName,
       colId: colId,
@@ -603,7 +603,7 @@ export default function Dashboard() {
       }
     } : d);
 
-    await updateCampaign(campaignId, { data: newData });
+    await updateCampaign(campaignId!, { data: newData });
 
     // Update active slot to reflect change in sidebar
     if (activeMatrixSlot && activeMatrixSlot.actionId === actionId) {
@@ -625,7 +625,7 @@ export default function Dashboard() {
       }
     } : d);
 
-    await updateCampaign(campaignId, { data: newData });
+    await updateCampaign(campaignId!, { data: newData });
     setActiveMatrixSlot(null);
   };
 
