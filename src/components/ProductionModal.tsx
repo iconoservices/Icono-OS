@@ -482,7 +482,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
 
                   {/* RIGHT: Inspiraciones (Overlay-able) — ahora col-span-8 */}
                   <div className={`flex flex-col min-h-0 bg-surface-container-lowest transition-all duration-300 ${isExpanded ? 'absolute inset-0 z-40' : 'col-span-8 border-l border-outline-variant/10'}`}>
-                      <div className="flex items-center justify-between p-4 border-b border-outline-variant/10 shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
+                      <div className="flex items-center justify-between px-6 py-2.5 border-b border-outline-variant/10 shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-[18px] text-primary">auto_awesome</span>
                           <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Galería de Inspiración</h3>
@@ -509,7 +509,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                       
                       <div className="flex-1 flex min-h-0 bg-surface-container-lowest/50">
                         {/* MAIN AREA (Active Inspirations) */}
-                        <div className="flex-1 overflow-y-auto p-6 min-h-0">
+                        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-3 min-h-0">
                           {(() => {
                             const activeInspirations = (editedData.inspirations || []).filter((ins: Inspiration) => !ins.used);
                             
@@ -539,7 +539,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                                         className="relative aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border border-outline-variant/10 shadow-sm hover:shadow-xl transition-all ring-0 hover:ring-4 ring-primary/20 cursor-pointer"
                                         onClick={() => setSelectedInspirationId(ins.id === selectedInspirationId ? null : ins.id)}
                                       >
-                                        <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
+                                        <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} currentTitle={ins.title} currentDescription={ins.description} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
                                         <button 
                                           onClick={(e) => { e.stopPropagation(); handleRemoveInspiration(ins.id); }}
                                           className="absolute top-2 right-2 w-7 h-7 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/70 hover:text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity z-10 border border-white/10"
@@ -555,14 +555,20 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                                         </button>
                                       </div>
 
-                                      {/* Text — click opens detail panel */}
-                                      <div
-                                        className="flex flex-col gap-0.5 px-1 mt-0.5 cursor-pointer"
-                                        style={{ height: '3rem' }}
-                                        onClick={() => setSelectedInspirationId(ins.id === selectedInspirationId ? null : ins.id)}
-                                      >
-                                        <p className="text-[10px] font-black text-on-surface uppercase tracking-widest line-clamp-1">{ins.title || "Sin título"}</p>
-                                        <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-snug">
+                                      {/* Text — description clicks open detail panel, title is editable inline */}
+                                      <div className="flex flex-col gap-0.5 px-1 mt-0.5" style={{ height: '3rem' }}>
+                                        <input
+                                          type="text"
+                                          value={ins.title}
+                                          onChange={(e) => handleUpdateInspiration(ins.id, { title: e.target.value })}
+                                          onClick={(e) => e.stopPropagation()}
+                                          placeholder="Nombre..."
+                                          className="text-[10px] font-black text-on-surface uppercase tracking-widest w-full bg-transparent border-none focus:ring-0 p-0 placeholder:text-slate-300 placeholder:normal-case placeholder:not-italic truncate"
+                                        />
+                                        <p
+                                          className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-snug cursor-pointer"
+                                          onClick={() => setSelectedInspirationId(ins.id === selectedInspirationId ? null : ins.id)}
+                                        >
                                           {ins.description || <span className="italic text-slate-300">Sin descripción</span>}
                                         </p>
                                       </div>
@@ -653,22 +659,25 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                                    {/* Editable URL */}
                                    <div className="flex flex-col gap-1.5">
                                      <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Enlace</p>
-                                     <div className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant/10 focus-within:border-[#ff0050]/40 rounded-lg px-2.5 py-1.5 transition-colors">
-                                       <span className="material-symbols-outlined text-[14px] text-[#ff0050] shrink-0">link</span>
-                                       <input
-                                         type="text"
-                                         value={sel.url}
-                                         onChange={(e) => handleUpdateInspiration(sel.id, { url: e.target.value })}
-                                         placeholder="https://tiktok.com/..."
-                                         className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-[11px] font-bold text-[#ff0050] placeholder:text-[#ff0050]/20"
-                                       />
+                                     <div className="flex flex-col gap-1.5 bg-surface-container-lowest border border-outline-variant/10 focus-within:border-[#ff0050]/40 rounded-lg px-2.5 py-2 transition-colors">
+                                       <div className="flex items-start gap-2">
+                                         <span className="material-symbols-outlined text-[14px] text-[#ff0050] shrink-0 mt-0.5">link</span>
+                                         <textarea
+                                           value={sel.url}
+                                           onChange={(e) => handleUpdateInspiration(sel.id, { url: e.target.value })}
+                                           placeholder="https://tiktok.com/..."
+                                           rows={2}
+                                           className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-[11px] font-bold text-[#ff0050] placeholder:text-[#ff0050]/20 resize-none leading-snug break-all"
+                                         />
+                                       </div>
                                        {sel.url && (
                                          <a href={sel.url} target="_blank" rel="noopener noreferrer"
-                                           className="shrink-0 p-1 rounded-md hover:bg-[#ff0050]/10 text-[#ff0050]/60 hover:text-[#ff0050] transition-colors"
+                                           className="w-full flex items-center justify-center gap-1.5 py-1 rounded-md bg-[#ff0050]/8 hover:bg-[#ff0050]/15 text-[#ff0050]/70 hover:text-[#ff0050] transition-colors text-[10px] font-bold uppercase tracking-wide"
                                            title="Abrir enlace"
                                            onClick={(e) => e.stopPropagation()}
                                          >
-                                           <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                                           <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                                           Abrir
                                          </a>
                                        )}
                                      </div>
@@ -719,7 +728,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                                       className="relative aspect-[3/4] bg-slate-900 rounded-xl overflow-hidden border border-outline-variant/10 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all group/used cursor-pointer"
                                       title={ins.title}
                                     >
-                                      <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
+                                      <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} currentTitle={ins.title} currentDescription={ins.description} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleUpdateInspiration(ins.id, { used: false }); }}
                                         className="absolute inset-0 bg-primary/80 flex items-center justify-center opacity-0 group-hover/used:opacity-100 transition-opacity"
@@ -746,20 +755,33 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
   );
 }
 
-function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, url: string, onUpdate: (data: Partial<Inspiration>) => void }) {
+function InspirationThumbnail({ imageUrl, url, currentTitle, currentDescription, onUpdate }: { imageUrl: string, url: string, currentTitle?: string, currentDescription?: string, onUpdate: (data: Partial<Inspiration>) => void }) {
   const [isFetching, setIsFetching] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const prevUrlRef = useRef(url);
 
   const onUpdateRef = useRef(onUpdate);
   useEffect(() => {
     onUpdateRef.current = onUpdate;
   }, [onUpdate]);
 
+  // Detect URL changes → clear old image and reset state to trigger re-fetch
+  useEffect(() => {
+    if (url !== prevUrlRef.current) {
+      prevUrlRef.current = url;
+      setHasError(false);
+      setRetryCount(0);
+      if (imageUrl) {
+        onUpdateRef.current({ imageUrl: "" }); // Clear stale thumbnail
+      }
+    }
+  }, [url, imageUrl]);
+
   useEffect(() => {
     // Re-fetch if we don't have an image OR if the previous one failed
     if (imageUrl && !hasError) return;
-    
+
     // Stop after 2 retries to prevent infinite loops
     if (retryCount >= 2) return;
 
@@ -773,9 +795,22 @@ function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, u
         if (res.ok) {
           const data = await res.json();
           if (data.thumbnail_url) {
-            onUpdateRef.current({ imageUrl: data.thumbnail_url });
+            const updates: Partial<Inspiration> = { imageUrl: data.thumbnail_url };
+            
+            // Auto-fill title if it's a generic placeholder
+            const isPlaceholderTitle = !currentTitle || /^referencia\s+\d+$/i.test(currentTitle.trim());
+            if (data.title && isPlaceholderTitle) {
+              updates.title = data.title;
+            }
+
+            // Auto-fill description if it's empty
+            if (data.title && !currentDescription) {
+              updates.description = data.title;
+            }
+            
+            onUpdateRef.current(updates);
             setHasError(false);
-            setRetryCount(0); // Reset on success
+            setRetryCount(0);
             return;
           }
         }
@@ -793,14 +828,14 @@ function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, u
 
     const timer = setTimeout(fetchThumbnail, 1500);
     return () => clearTimeout(timer);
-  }, [imageUrl, url, hasError, retryCount]);
+  }, [imageUrl, url, hasError, retryCount, currentTitle, currentDescription]);
 
   if (imageUrl && !hasError) {
     return (
-      <img 
-        src={imageUrl} 
-        className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-500" 
-        alt="" 
+      <img
+        src={imageUrl}
+        className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-500"
+        alt=""
         onError={() => {
           console.log("Thumbnail expired/failed, clearing to retry...");
           setHasError(true);
