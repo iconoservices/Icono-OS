@@ -10,6 +10,7 @@ interface Inspiration {
   description: string;
   url: string;
   imageUrl: string;
+  used?: boolean;
 }
 
 interface ProductionModalProps {
@@ -73,12 +74,20 @@ function InspirationCard({
   const hasImage = !!(inspiration.imageUrl && inspiration.imageUrl.length > 0);
 
   return (
-    <div className="bg-surface-container-lowest border border-outline-variant/5 rounded-xl p-3 flex flex-col gap-3 focus-within:border-primary/20 transition-all relative group/card">
+    <div className={`bg-surface-container-lowest border border-outline-variant/5 rounded-xl p-3 flex flex-col gap-3 focus-within:border-primary/20 transition-all relative group/card ${inspiration.used ? 'opacity-40 grayscale scale-[0.98]' : ''}`}>
       <button 
         onClick={onRemove}
         className="absolute -top-2 -right-2 w-5 h-5 bg-white border border-outline-variant/20 rounded-full flex items-center justify-center text-outline-variant hover:text-error hover:border-error/20 shadow-sm opacity-0 group-hover/card:opacity-100 transition-opacity z-30"
       >
         <span className="material-symbols-outlined text-[12px]">close</span>
+      </button>
+
+      <button
+        onClick={() => onUpdate({ used: !inspiration.used })}
+        className={`absolute -top-2 -left-2 w-5 h-5 border rounded-full flex items-center justify-center shadow-sm z-30 transition-colors ${inspiration.used ? 'bg-primary border-primary text-white' : 'bg-white border-outline-variant/20 text-transparent hover:text-primary/40 group-hover/card:border-primary/40'}`}
+        title={inspiration.used ? "Desmarcar" : "Marcar como usado"}
+      >
+        <span className="material-symbols-outlined text-[12px]">check</span>
       </button>
 
       <div className="flex gap-3">
@@ -141,6 +150,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedInspirationId, setSelectedInspirationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (eventData) {
@@ -373,103 +383,96 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                   <div className="col-span-4 flex flex-col divide-y divide-outline-variant/10 bg-white">
                     
                     {/* Briefing */}
-                    <div className="p-6">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="material-symbols-outlined text-[18px] text-primary">lightbulb</span>
-                        <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Briefing Estratégico</h3>
+                    <div className="px-6 py-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-[16px] text-primary">lightbulb</span>
+                        <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">Briefing Estratégico</h3>
                       </div>
-                      <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
-                        <h4 className="text-[9px] font-bold uppercase tracking-widest text-outline-variant mb-2">Objetivo de la pieza</h4>
+                      <div className="space-y-1">
+                        <h4 className="text-[8px] font-bold uppercase tracking-widest text-outline-variant/60">Objetivo de la pieza</h4>
                         <textarea 
                           value={editedData.goal}
                           onChange={(e) => handleChange("goal", e.target.value)}
                           placeholder="Describe el objetivo..."
-                          rows={3}
-                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[13px] font-medium text-slate-700 leading-relaxed resize-none placeholder:text-slate-300"
+                          rows={2}
+                          className="w-full bg-transparent border-none focus:ring-0 p-0 text-[12px] font-medium text-slate-700 leading-snug resize-none placeholder:text-slate-300"
                         />
                       </div>
                     </div>
 
                     {/* Estrategia */}
-                    <div className="p-6 flex-1 flex flex-col min-h-0 overflow-y-auto">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="material-symbols-outlined text-[18px] text-primary">dynamic_feed</span>
-                        <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Estrategia de Contenido</h3>
+                    <div className="px-6 py-4 flex-1 flex flex-col min-h-0 overflow-y-auto">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-[16px] text-primary">dynamic_feed</span>
+                        <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">Estrategia de Contenido</h3>
                       </div>
                       <div className="space-y-4 flex-1 flex flex-col">
-                        <div className="bg-[#00174b] rounded-2xl p-6 relative overflow-hidden shadow-xl group/hook">
-                          <div className="absolute top-0 right-0 p-3 opacity-20 group-hover/hook:opacity-40 transition-opacity">
-                            <span className="material-symbols-outlined text-4xl text-white">format_quote</span>
-                          </div>
-                          <h4 className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-2">Hook (Gancho Inicial)</h4>
+                        <div className="bg-[#00174b] rounded-xl p-4 relative overflow-hidden group/hook">
+                          <h4 className="text-[8px] font-bold text-white/40 uppercase tracking-widest mb-1.5">Hook (Gancho Inicial)</h4>
                           <textarea 
                             value={editedData.hook}
                             onChange={(e) => handleChange("hook", e.target.value)}
                             placeholder='"¿Qué pasaría si te dijera..."'
-                            className="w-full bg-transparent border-none focus:ring-0 p-0 text-lg font-bold font-headline text-white italic tracking-tight resize-none placeholder:text-white/10"
+                            className="w-full bg-transparent border-none focus:ring-0 p-0 text-base font-bold font-headline text-white italic tracking-tight resize-none placeholder:text-white/10"
                             rows={2}
                           />
                         </div>
-                        <div className="bg-white border border-outline-variant/10 rounded-2xl p-5 flex-1 flex flex-col shadow-sm hover:shadow-md transition-shadow min-h-0">
-                          <h4 className="text-[9px] font-bold uppercase tracking-widest text-outline-variant mb-2">Arco Narrativo (Cuerpo)</h4>
+
+
+                        <div className="flex-1 flex flex-col min-h-0">
+                          <h4 className="text-[8px] font-bold uppercase tracking-widest text-outline-variant/60 mb-1.5">Arco Narrativo (Cuerpo)</h4>
                           <textarea 
                             value={editedData.narrative}
                             onChange={(e) => handleChange("narrative", e.target.value)}
                             placeholder="Desarrollo del contenido..."
-                            className="w-full bg-transparent border-none focus:ring-0 p-0 text-[14px] text-slate-700 leading-relaxed resize-none flex-1 placeholder:text-slate-300"
+                            className="w-full bg-transparent border-none focus:ring-0 p-0 text-[13px] text-slate-700 leading-snug resize-none flex-1 placeholder:text-slate-300"
                           />
-                          <div className="flex items-center justify-between border-t border-outline-variant/10 pt-4 mt-4">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-primary/40">Call to Action (CTA)</span>
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-full border border-primary/10">
+                          <div className="flex items-center justify-between border-t border-outline-variant/10 pt-3 mt-3 shrink-0">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-primary/40">Call to Action (CTA)</span>
+                            <div className="flex items-center gap-2 px-2.5 py-1 bg-primary/5 rounded-lg border border-primary/10">
                               <input 
                                 type="text"
                                 value={editedData.cta}
                                 onChange={(e) => handleChange("cta", e.target.value)}
-                                className="bg-transparent border-none focus:ring-0 p-0 text-[12px] font-bold text-primary text-right w-32 placeholder:text-primary/20"
+                                className="bg-transparent border-none focus:ring-0 p-0 text-[11px] font-bold text-primary text-right w-28 placeholder:text-primary/20"
                               />
-                              <span className="material-symbols-outlined text-[14px] text-primary">arrow_outward</span>
+                              <span className="material-symbols-outlined text-[12px] text-primary">arrow_outward</span>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* CENTER: Recursos */}
-                  <div className="col-span-2 flex flex-col divide-y divide-outline-variant/10 bg-surface-container-lowest/50">
-                    <div className="p-6">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="material-symbols-outlined text-[18px] text-primary">folder_open</span>
-                        <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Recursos</h3>
+                    {/* Recursos (integrado en la columna izquierda) */}
+                    <div className="px-6 py-4 shrink-0">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="material-symbols-outlined text-[16px] text-primary">folder_open</span>
+                        <h3 className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">Recursos</h3>
                       </div>
-                      <div className="space-y-3">
-                        <div className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-outline-variant/10 shadow-sm hover:border-primary/30 transition-colors cursor-pointer group/res">
-                          <div className="h-10 w-10 bg-surface-container-high rounded-xl flex items-center justify-center text-primary shrink-0 group-hover/res:bg-primary group-hover/res:text-white transition-colors">
-                            <span className="material-symbols-outlined text-[20px]">add_link</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-[9px] font-bold text-primary uppercase tracking-tight mb-0.5">Raw Footage</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-lowest border border-outline-variant/10 rounded-xl hover:border-primary/20 transition-colors">
+                          <span className="material-symbols-outlined text-[14px] text-primary shrink-0">add_link</span>
+                          <div className="min-w-0">
+                            <p className="text-[7px] font-black uppercase tracking-widest text-outline-variant/60">Raw Footage</p>
                             <input 
                               type="text"
                               value={editedData.resources?.drive || ""}
                               onChange={(e) => handleNestedChange("resources", "drive", e.target.value)}
-                              placeholder="Link de Drive..."
-                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-[11px] text-on-surface-variant font-medium placeholder:text-outline/20 truncate"
+                              placeholder="Link Drive..."
+                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/20 truncate"
                             />
                           </div>
                         </div>
-                        <div className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-outline-variant/10 shadow-sm hover:border-primary/30 transition-colors cursor-pointer group/res">
-                          <div className="h-10 w-10 bg-surface-container-high rounded-xl flex items-center justify-center text-primary shrink-0 group-hover/res:bg-primary group-hover/res:text-white transition-colors">
-                            <span className="material-symbols-outlined text-[20px]">movie</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-[9px] font-bold text-primary uppercase tracking-tight mb-0.5">Export Final</h4>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-surface-container-lowest border border-outline-variant/10 rounded-xl hover:border-primary/20 transition-colors">
+                          <span className="material-symbols-outlined text-[14px] text-primary shrink-0">movie</span>
+                          <div className="min-w-0">
+                            <p className="text-[7px] font-black uppercase tracking-widest text-outline-variant/60">Export Final</p>
                             <input 
                               type="text"
                               value={editedData.resources?.export || ""}
                               onChange={(e) => handleNestedChange("resources", "export", e.target.value)}
-                              placeholder="Link del export..."
-                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-[11px] text-on-surface-variant font-medium placeholder:text-outline/20 truncate"
+                              placeholder="Link export..."
+                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-[10px] text-on-surface-variant font-medium placeholder:text-outline/20 truncate"
                             />
                           </div>
                         </div>
@@ -477,30 +480,14 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                     </div>
                   </div>
 
-                  {/* RIGHT: Inspiraciones (Overlay-able) */}
-                  <div className={`flex flex-col min-h-0 bg-surface-container-lowest transition-all duration-300 ${isExpanded ? 'absolute inset-0 z-40' : 'col-span-6 border-l border-outline-variant/10'}`}>
+                  {/* RIGHT: Inspiraciones (Overlay-able) — ahora col-span-8 */}
+                  <div className={`flex flex-col min-h-0 bg-surface-container-lowest transition-all duration-300 ${isExpanded ? 'absolute inset-0 z-40' : 'col-span-8 border-l border-outline-variant/10'}`}>
                       <div className="flex items-center justify-between p-4 border-b border-outline-variant/10 shrink-0 bg-white/80 backdrop-blur-md sticky top-0 z-10">
                         <div className="flex items-center gap-2">
                           <span className="material-symbols-outlined text-[18px] text-primary">auto_awesome</span>
                           <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Galería de Inspiración</h3>
                         </div>
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center bg-surface-container-high p-1 rounded-xl">
-                            <button 
-                              onClick={() => setViewMode('grid')}
-                              className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-outline-variant hover:text-primary'}`}
-                              title="Ver Cuadrícula"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">grid_view</span>
-                            </button>
-                            <button 
-                              onClick={() => setViewMode('list')}
-                              className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-outline-variant hover:text-primary'}`}
-                              title="Ver Lista"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">view_list</span>
-                            </button>
-                          </div>
                           <div className="h-5 w-px bg-outline-variant/20"></div>
                           <button 
                             onClick={() => setIsExpanded(prev => !prev)}
@@ -520,61 +507,190 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                         </div>
                       </div>
                       
-                      <div className="flex-1 overflow-y-auto p-6 min-h-0 bg-surface-container-lowest/50">
-                        {viewMode === 'grid' ? (
-                          <div className={`grid gap-6 ${isExpanded ? 'grid-cols-4 lg:grid-cols-6 xl:grid-cols-8' : 'grid-cols-3 lg:grid-cols-4'}`}>
-                            <AnimatePresence>
-                              {editedData.inspirations.map((ins: Inspiration) => (
-                                <motion.div
-                                  key={ins.id}
-                                  initial={{ opacity: 0, scale: 0.9 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 0.9 }}
-                                  className="group/thumb relative aspect-[3/4] bg-slate-900 rounded-[2rem] overflow-hidden border border-outline-variant/10 shadow-lg hover:shadow-2xl transition-all cursor-pointer ring-0 hover:ring-4 ring-primary/20"
-                                  onClick={() => { setViewMode('list'); if (isExpanded) setIsExpanded(false); }}
-                                >
-                                  <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
-                                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/90 via-black/40 to-transparent pt-12">
-                                    <p className="text-[10px] font-black text-white truncate uppercase tracking-widest">{ins.title || "Sin título"}</p>
-                                  </div>
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); handleRemoveInspiration(ins.id); }}
-                                    className="absolute top-3 right-3 w-8 h-8 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/70 hover:text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity z-10 border border-white/10"
-                                  >
-                                    <span className="material-symbols-outlined text-[16px]">close</span>
-                                  </button>
-                                </motion.div>
-                              ))}
-                            </AnimatePresence>
-                          </div>
-                        ) : (
-                          <div className={`space-y-6 ${isExpanded ? 'max-w-4xl mx-auto' : ''}`}>
-                            <AnimatePresence>
-                              {editedData.inspirations.map((ins: Inspiration) => (
-                                <motion.div
-                                  key={ins.id}
-                                  initial={{ opacity: 0, y: 12 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  exit={{ opacity: 0, scale: 0.95 }}
-                                >
-                                  <InspirationCard 
-                                    inspiration={ins} 
-                                    onUpdate={(data) => handleUpdateInspiration(ins.id, data)}
-                                    onRemove={() => handleRemoveInspiration(ins.id)}
-                                  />
-                                </motion.div>
-                              ))}
-                            </AnimatePresence>
-                          </div>
-                        )}
-                        
-                        {editedData.inspirations.length === 0 && (
+                      <div className="flex-1 flex min-h-0 bg-surface-container-lowest/50">
+                        {/* MAIN AREA (Active Inspirations) */}
+                        <div className="flex-1 overflow-y-auto p-6 min-h-0">
+                          {(() => {
+                            const activeInspirations = (editedData.inspirations || []).filter((ins: Inspiration) => !ins.used);
+                            
+                            if (activeInspirations.length === 0 && (editedData.inspirations || []).length > 0) {
+                              return (
+                                <div className="h-full flex flex-col items-center justify-center text-outline-variant/40 gap-3">
+                                  <span className="material-symbols-outlined text-4xl">inventory_2</span>
+                                  <p className="text-[11px] font-black uppercase tracking-widest">Todas las referencias han sido usadas</p>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <div className={`grid gap-x-4 gap-y-6 ${isExpanded ? 'grid-cols-8 lg:grid-cols-10 xl:grid-cols-12' : 'grid-cols-6 lg:grid-cols-7'}`}>
+                                <AnimatePresence>
+                                  {activeInspirations.map((ins: Inspiration) => (
+                                    <motion.div
+                                      key={ins.id}
+                                      initial={{ opacity: 0, scale: 0.9 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      exit={{ opacity: 0, scale: 0.8 }}
+                                      layout
+                                      className="group/thumb flex flex-col gap-2 cursor-pointer"
+                                      onClick={() => setSelectedInspirationId(ins.id === selectedInspirationId ? null : ins.id)}
+                                    >
+                                      <div className="relative aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border border-outline-variant/10 shadow-sm hover:shadow-xl transition-all ring-0 hover:ring-4 ring-primary/20">
+                                        <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
+                                        <button 
+                                          onClick={(e) => { e.stopPropagation(); handleRemoveInspiration(ins.id); }}
+                                          className="absolute top-2 right-2 w-7 h-7 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/70 hover:text-white opacity-0 group-hover/thumb:opacity-100 transition-opacity z-10 border border-white/10"
+                                        >
+                                          <span className="material-symbols-outlined text-[14px]">close</span>
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleUpdateInspiration(ins.id, { used: true }); }}
+                                          className="absolute top-2 left-2 w-7 h-7 bg-black/40 backdrop-blur-md rounded-full flex items-center justify-center text-white/40 hover:text-white hover:border-white/40 opacity-0 group-hover/thumb:opacity-100 transition-all z-10 border border-white/10"
+                                          title="Marcar como usado"
+                                        >
+                                          <span className="material-symbols-outlined text-[14px]">check</span>
+                                        </button>
+                                      </div>
+                                      
+                                      <div className="flex flex-col gap-0.5 px-1 mt-0.5" style={{ height: '4.5rem' }}>
+                                        <p className="text-[10px] font-black text-on-surface uppercase tracking-widest line-clamp-1">{ins.title || "Sin título"}</p>
+                                        <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-snug flex-1">
+                                          {ins.description || <span className="italic text-slate-300">Sin descripción</span>}
+                                        </p>
+                                        <div className="flex items-center gap-1 mt-auto">
+                                          <span className="material-symbols-outlined text-[10px] text-[#ff0050]">link</span>
+                                          {ins.url ? (
+                                            <span className="text-[9px] font-bold text-[#ff0050] truncate">{ins.url.replace(/^https?:\/\//, '')}</span>
+                                          ) : (
+                                            <span className="text-[9px] font-medium text-slate-300 italic">Sin enlace</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  ))}
+                                </AnimatePresence>
+                              </div>
+                            );
+                          })()}
+                          
+                          {editedData.inspirations.length === 0 && (
                           <div className="h-64 flex flex-col items-center justify-center text-outline-variant/30 gap-3 border-2 border-dashed border-outline-variant/10 rounded-3xl bg-surface-container-lowest/50">
                             <span className="material-symbols-outlined text-4xl">auto_awesome_motion</span>
                             <p className="text-[11px] font-black uppercase tracking-widest">Sin referencias guardadas</p>
                             <button onClick={handleAddInspiration} className="text-[10px] font-bold text-primary px-4 py-2 bg-primary/5 rounded-full hover:bg-primary/10 transition-colors">Añadir Primera</button>
                           </div>
                         )}
+                        </div>
+
+                        {/* DETAIL PANEL - slides in when a thumbnail is selected */}
+                        <AnimatePresence>
+                          {selectedInspirationId && (() => {
+                            const sel = (editedData.inspirations || []).find((i: Inspiration) => i.id === selectedInspirationId);
+                            if (!sel) return null;
+                            return (
+                              <motion.div
+                                initial={{ opacity: 0, x: 60 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 60 }}
+                                transition={{ type: 'spring', stiffness: 380, damping: 38 }}
+                                className="w-64 shrink-0 bg-white border-l border-outline-variant/20 flex flex-col overflow-hidden shadow-xl"
+                              >
+                                <div className="relative bg-slate-900 shrink-0" style={{ aspectRatio: '3/4', maxHeight: '45%' }}>
+                                  <img
+                                    src={sel.imageUrl || ''}
+                                    alt={sel.title}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                                    <p className="text-[10px] font-black text-white uppercase tracking-widest">{sel.title || 'Sin título'}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => setSelectedInspirationId(null)}
+                                    className="absolute top-2 right-2 w-7 h-7 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:text-white border border-white/10"
+                                  >
+                                    <span className="material-symbols-outlined text-[14px]">close</span>
+                                  </button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 flex flex-col gap-4 min-h-0">
+                                  {sel.description && (
+                                    <div className="flex flex-col gap-1.5">
+                                      <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Descripción</p>
+                                      <p className="text-[13px] font-medium text-on-surface leading-relaxed break-words" style={{ overflowWrap: 'anywhere' }}>{sel.description}</p>
+                                    </div>
+                                  )}
+                                  {sel.url && (
+                                    <div className="flex flex-col gap-1.5">
+                                      <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Enlace</p>
+                                      <a href={sel.url} target="_blank" rel="noopener noreferrer"
+                                        className="flex items-start gap-1.5 text-[11px] font-bold text-[#ff0050] hover:underline break-all"
+                                      >
+                                        <span className="material-symbols-outlined text-[14px] shrink-0">link</span>
+                                        {sel.url.replace(/^https?:\/\//, '')}
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Botones siempre visibles al fondo */}
+                                <div className="shrink-0 flex flex-col gap-2 p-4 border-t border-outline-variant/10 bg-white">
+                                  <button
+                                    onClick={() => handleUpdateInspiration(sel.id, { used: !sel.used })}
+                                    className={`w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${sel.used ? 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high' : 'bg-primary text-white hover:opacity-90'}`}
+                                  >
+                                    <span className="material-symbols-outlined text-[14px]">{sel.used ? 'undo' : 'check'}</span>
+                                    {sel.used ? 'Restaurar' : 'Marcar usada'}
+                                  </button>
+                                  <button
+                                    onClick={() => { handleRemoveInspiration(sel.id); setSelectedInspirationId(null); }}
+                                    className="w-full py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider bg-error/5 text-error hover:bg-error/10 flex items-center justify-center gap-2 transition-all"
+                                  >
+                                    <span className="material-symbols-outlined text-[14px]">delete</span>
+                                    Eliminar
+                                  </button>
+                                </div>
+                              </motion.div>
+                            );
+                          })()}
+                        </AnimatePresence>
+
+                        {/* SIDEBAR: Used Inspirations */}
+                        {(() => {
+                          const usedInspirations = (editedData.inspirations || []).filter((ins: Inspiration) => ins.used);
+                          if (usedInspirations.length === 0) return null;
+
+                          return (
+                            <div className="w-28 lg:w-36 shrink-0 bg-surface-container-lowest/80 border-l border-outline-variant/10 overflow-y-auto p-4 flex flex-col gap-4">
+                              <div className="flex items-center gap-1.5 px-1 opacity-60">
+                                <span className="material-symbols-outlined text-[14px]">checklist</span>
+                                <h4 className="text-[9px] font-black uppercase tracking-widest">Usados</h4>
+                              </div>
+                              <div className="flex flex-col gap-3">
+                                <AnimatePresence>
+                                  {usedInspirations.map((ins: Inspiration) => (
+                                    <motion.div
+                                      key={ins.id}
+                                      initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                                      animate={{ opacity: 1, scale: 1, x: 0 }}
+                                      exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                                      layout
+                                      className="relative aspect-[3/4] bg-slate-900 rounded-xl overflow-hidden border border-outline-variant/10 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all group/used cursor-pointer"
+                                      title={ins.title}
+                                    >
+                                      <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleUpdateInspiration(ins.id, { used: false }); }}
+                                        className="absolute inset-0 bg-primary/80 flex items-center justify-center opacity-0 group-hover/used:opacity-100 transition-opacity"
+                                        title="Restaurar"
+                                      >
+                                        <span className="material-symbols-outlined text-white text-2xl">undo</span>
+                                      </button>
+                                    </motion.div>
+                                  ))}
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                 </div>
