@@ -532,10 +532,13 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                                       animate={{ opacity: 1, scale: 1 }}
                                       exit={{ opacity: 0, scale: 0.8 }}
                                       layout
-                                      className="group/thumb flex flex-col gap-2 cursor-pointer"
-                                      onClick={() => setSelectedInspirationId(ins.id === selectedInspirationId ? null : ins.id)}
+                                      className="group/thumb flex flex-col gap-2"
                                     >
-                                      <div className="relative aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border border-outline-variant/10 shadow-sm hover:shadow-xl transition-all ring-0 hover:ring-4 ring-primary/20">
+                                      {/* Image — click opens detail panel */}
+                                      <div
+                                        className="relative aspect-[3/4] bg-slate-900 rounded-2xl overflow-hidden border border-outline-variant/10 shadow-sm hover:shadow-xl transition-all ring-0 hover:ring-4 ring-primary/20 cursor-pointer"
+                                        onClick={() => setSelectedInspirationId(ins.id === selectedInspirationId ? null : ins.id)}
+                                      >
                                         <InspirationThumbnail imageUrl={ins.imageUrl} url={ins.url} onUpdate={(data) => handleUpdateInspiration(ins.id, data)} />
                                         <button 
                                           onClick={(e) => { e.stopPropagation(); handleRemoveInspiration(ins.id); }}
@@ -551,20 +554,32 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                                           <span className="material-symbols-outlined text-[14px]">check</span>
                                         </button>
                                       </div>
-                                      
-                                      <div className="flex flex-col gap-0.5 px-1 mt-0.5" style={{ height: '4.5rem' }}>
+
+                                      {/* Text — click opens detail panel */}
+                                      <div
+                                        className="flex flex-col gap-0.5 px-1 mt-0.5 cursor-pointer"
+                                        style={{ height: '3rem' }}
+                                        onClick={() => setSelectedInspirationId(ins.id === selectedInspirationId ? null : ins.id)}
+                                      >
                                         <p className="text-[10px] font-black text-on-surface uppercase tracking-widest line-clamp-1">{ins.title || "Sin título"}</p>
-                                        <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-snug flex-1">
+                                        <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-snug">
                                           {ins.description || <span className="italic text-slate-300">Sin descripción</span>}
                                         </p>
-                                        <div className="flex items-center gap-1 mt-auto">
-                                          <span className="material-symbols-outlined text-[10px] text-[#ff0050]">link</span>
-                                          {ins.url ? (
-                                            <span className="text-[9px] font-bold text-[#ff0050] truncate">{ins.url.replace(/^https?:\/\//, '')}</span>
-                                          ) : (
-                                            <span className="text-[9px] font-medium text-slate-300 italic">Sin enlace</span>
-                                          )}
-                                        </div>
+                                      </div>
+
+                                      {/* Link — inline editable, does NOT open panel */}
+                                      <div
+                                        className="flex items-center gap-1 px-1"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <span className="material-symbols-outlined text-[10px] text-[#ff0050] shrink-0">link</span>
+                                        <input
+                                          type="text"
+                                          value={ins.url}
+                                          onChange={(e) => handleUpdateInspiration(ins.id, { url: e.target.value })}
+                                          placeholder="Pegar link..."
+                                          className="flex-1 min-w-0 bg-transparent border-none focus:ring-0 p-0 text-[9px] font-bold text-[#ff0050] placeholder:text-slate-300 placeholder:font-normal placeholder:not-italic truncate"
+                                        />
                                       </div>
                                     </motion.div>
                                   ))}
@@ -613,24 +628,52 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                                   </button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-4 flex flex-col gap-4 min-h-0">
-                                  {sel.description && (
-                                    <div className="flex flex-col gap-1.5">
-                                      <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Descripción</p>
-                                      <p className="text-[13px] font-medium text-on-surface leading-relaxed break-words" style={{ overflowWrap: 'anywhere' }}>{sel.description}</p>
-                                    </div>
-                                  )}
-                                  {sel.url && (
-                                    <div className="flex flex-col gap-1.5">
-                                      <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Enlace</p>
-                                      <a href={sel.url} target="_blank" rel="noopener noreferrer"
-                                        className="flex items-start gap-1.5 text-[11px] font-bold text-[#ff0050] hover:underline break-all"
-                                      >
-                                        <span className="material-symbols-outlined text-[14px] shrink-0">link</span>
-                                        {sel.url.replace(/^https?:\/\//, '')}
-                                      </a>
-                                    </div>
-                                  )}
-                                </div>
+                                   {/* Editable title */}
+                                   <div className="flex flex-col gap-1.5">
+                                     <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Nombre</p>
+                                     <input
+                                       type="text"
+                                       value={sel.title}
+                                       onChange={(e) => handleUpdateInspiration(sel.id, { title: e.target.value })}
+                                       placeholder="Nombre de la referencia..."
+                                       className="w-full bg-surface-container-lowest border border-outline-variant/10 focus:border-primary/40 rounded-lg px-2.5 py-1.5 text-[12px] font-bold text-on-surface focus:ring-0 transition-colors"
+                                     />
+                                   </div>
+                                   {/* Editable description */}
+                                   <div className="flex flex-col gap-1.5">
+                                     <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Descripción</p>
+                                     <textarea
+                                       value={sel.description}
+                                       onChange={(e) => handleUpdateInspiration(sel.id, { description: e.target.value })}
+                                       placeholder="Descripción de la idea..."
+                                       rows={3}
+                                       className="w-full bg-surface-container-lowest border border-outline-variant/10 focus:border-primary/40 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-on-surface leading-snug resize-none focus:ring-0 transition-colors placeholder:text-outline/30"
+                                     />
+                                   </div>
+                                   {/* Editable URL */}
+                                   <div className="flex flex-col gap-1.5">
+                                     <p className="text-[9px] font-black uppercase tracking-widest text-outline-variant">Enlace</p>
+                                     <div className="flex items-center gap-2 bg-surface-container-lowest border border-outline-variant/10 focus-within:border-[#ff0050]/40 rounded-lg px-2.5 py-1.5 transition-colors">
+                                       <span className="material-symbols-outlined text-[14px] text-[#ff0050] shrink-0">link</span>
+                                       <input
+                                         type="text"
+                                         value={sel.url}
+                                         onChange={(e) => handleUpdateInspiration(sel.id, { url: e.target.value })}
+                                         placeholder="https://tiktok.com/..."
+                                         className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-[11px] font-bold text-[#ff0050] placeholder:text-[#ff0050]/20"
+                                       />
+                                       {sel.url && (
+                                         <a href={sel.url} target="_blank" rel="noopener noreferrer"
+                                           className="shrink-0 p-1 rounded-md hover:bg-[#ff0050]/10 text-[#ff0050]/60 hover:text-[#ff0050] transition-colors"
+                                           title="Abrir enlace"
+                                           onClick={(e) => e.stopPropagation()}
+                                         >
+                                           <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                                         </a>
+                                       )}
+                                     </div>
+                                   </div>
+                                 </div>
                                 {/* Botones siempre visibles al fondo */}
                                 <div className="shrink-0 flex flex-col gap-2 p-4 border-t border-outline-variant/10 bg-white">
                                   <button
@@ -722,9 +765,6 @@ function InspirationThumbnail({ imageUrl, url, onUpdate }: { imageUrl: string, u
 
     const trimmedUrl = url?.trim();
     if (!trimmedUrl || !trimmedUrl.startsWith("http")) return;
-
-    const isSupported = trimmedUrl.includes("tiktok.com") || trimmedUrl.includes("youtube.com") || trimmedUrl.includes("youtu.be");
-    if (!isSupported) return;
 
     const fetchThumbnail = async () => {
       setIsFetching(true);

@@ -95,6 +95,31 @@ export async function GET(request: Request) {
           author_name: data.author_name || '',
         });
       }
+    } else {
+      // Universal fallback: use Microlink to extract thumbnail from any URL (Instagram, Twitter, etc.)
+      try {
+        const microlinkRes = await fetch(
+          `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=false`,
+          { headers: { 'User-Agent': 'Mozilla/5.0' } }
+        );
+        if (microlinkRes.ok) {
+          const mlData = await microlinkRes.json();
+          const image =
+            mlData.data?.image?.url ||
+            mlData.data?.logo?.url ||
+            '';
+          const title = mlData.data?.title || '';
+          if (image) {
+            return NextResponse.json({
+              thumbnail_url: image,
+              title,
+              author_name: mlData.data?.author || '',
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Microlink fallback failed:', e);
+      }
     }
 
     return NextResponse.json({ error: 'Platform not supported' }, { status: 400 });
