@@ -151,6 +151,7 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedInspirationId, setSelectedInspirationId] = useState<string | null>(null);
+  const [showSavedFeedback, setShowSavedFeedback] = useState(false);
 
   useEffect(() => {
     if (eventData) {
@@ -176,8 +177,6 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
     }
   }, [eventData]);
 
-  if (!eventData || !editedData) return null;
-
   const handleSave = async () => {
     if (!editedData || isSaving) return;
     setIsSaving(true);
@@ -191,16 +190,38 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { isDraft, isNew, ...rest } = dataToSave;
         await addContent(rest);
+        // Once saved, it's no longer new/draft
+        setEditedData((prev: any) => ({ ...prev, isNew: false, isDraft: false }));
       } else {
         await updateContent(dataToSave.id, dataToSave);
       }
-      onClose();
+      
+      // Feedback like Word
+      setShowSavedFeedback(true);
+      setTimeout(() => setShowSavedFeedback(false), 2000);
+      
+      // Removed onClose() — stays open like Word!
     } catch (error) {
       console.error("Error saving piece:", error);
     } finally {
       setIsSaving(false);
     }
   };
+
+  // Keyboard shortcut: Ctrl + S
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editedData, isSaving]);
+
+  if (!eventData || !editedData) return null;
+
 
   const handleDelete = async () => {
     setIsSaving(true);
@@ -366,9 +387,28 @@ export default function ProductionModal({ isOpen, onClose, eventData }: Producti
                     </button>
                   )}
                   
-                  <button className="px-4 py-1.5 text-[11px] font-bold text-primary bg-surface-container-lowest hover:bg-surface-container-low rounded-lg transition-colors border border-outline-variant/20 shadow-sm" onClick={handleSave} disabled={isSaving || showDeleteConfirm}>
-                    {isSaving ? "..." : "Guardar"}
-                  </button>
+                  <div className="relative flex items-center">
+                    <button 
+                      className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all border shadow-sm flex items-center gap-2 ${showSavedFeedback ? 'bg-green-50 text-green-600 border-green-200' : 'text-primary bg-surface-container-lowest hover:bg-surface-container-low border-outline-variant/20'}`} 
+                      onClick={handleSave} 
+                      disabled={isSaving || showDeleteConfirm}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">
+                        {isSaving ? 'sync' : (showSavedFeedback ? 'check_circle' : 'save')}
+                      </span>
+                      {isSaving ? "Guardando..." : (showSavedFeedback ? "Guardado" : "Guardar")}
+                    </button>
+                    {showSavedFeedback && (
+                      <motion.span 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute -top-8 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-lg pointer-events-none whitespace-nowrap"
+                      >
+                        Cambios guardados
+                      </motion.span>
+                    )}
+                  </div>
                   <button className="px-4 py-1.5 text-[11px] font-bold text-white bg-primary hover:opacity-90 rounded-lg transition-opacity shadow-lg shadow-primary/20">
                     Publicar
                   </button>
