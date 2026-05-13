@@ -1,19 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { calendarEvents, projectCampaigns, SUGGESTED_DATES } from "@/data/mock";
 import { PROJECT_OKRS, getOKRProgress, getKRProgress, statusConfig } from "@/data/kpis";
 import ProductionModal from "@/components/ProductionModal";
 import { useProject } from "@/context/ProjectContext";
 
-const initialMatrixColumns = [
-  { id: 'prod', title: 'Producción', subtitle: 'Acción en Campo', color: 'text-emerald-500', bg: 'bg-emerald-500', isAction: true },
-  { id: 'tiktok', title: 'TikTok', subtitle: 'Humor / Cercano', color: 'text-[#FE2C55]', bg: 'bg-[#FE2C55]', hoverBg: 'hover:bg-[#FE2C55]/10', hoverText: 'hover:text-[#FE2C55]', borderHover: 'hover:border-[#FE2C55]/20' },
-  { id: 'ig', title: 'Instagram', subtitle: 'Estético / Info', color: 'text-[#E4405F]', bg: 'bg-[#E4405F]', hoverBg: 'hover:bg-[#E4405F]/10', hoverText: 'hover:text-[#E4405F]', borderHover: 'hover:border-[#E4405F]/20' },
-  { id: 'fb', title: 'Facebook', subtitle: 'Promo / Comunidad', color: 'text-[#1877F2]', bg: 'bg-[#1877F2]', hoverBg: 'hover:bg-[#1877F2]/10', hoverText: 'hover:text-[#1877F2]', borderHover: 'hover:border-[#1877F2]/20' },
-  { id: 'stories', title: 'Meta Stories', subtitle: 'Historias / 24h', color: 'text-[#E1306C]', bg: 'bg-[#E1306C]', hoverBg: 'hover:bg-[#E1306C]/10', hoverText: 'hover:text-[#E1306C]', borderHover: 'hover:border-[#E1306C]/20' }
-];
+// initialMatrixColumns moved to ProjectContext for persistence
+
 
 // Map over days and store entries corresponding to column IDs
 const defaultCampaigns = [
@@ -442,6 +438,7 @@ export default function Dashboard() {
   const { 
     projects,
     currentProject, 
+    setCurrentProject,
     hiddenCampaignIds, 
     globalContents, 
     setGlobalContents, 
@@ -455,9 +452,15 @@ export default function Dashboard() {
     strategyLibrary,
     addStrategyTemplate,
     updateStrategyTemplate,
-    deleteStrategyTemplate
+    deleteStrategyTemplate,
+    matrixColumns,
+    addMatrixColumn,
+    updateMatrixColumn,
+    deleteMatrixColumn
   } = useProject();
-  const [view, setView] = useState<"monthly" | "weekly" | "matrix" | "yearly">("matrix");
+  
+  const router = useRouter();
+  const [view, setView] = useState<"monthly" | "weekly" | "matrix" | "yearly" | "categories" | "list">("matrix");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
@@ -537,7 +540,7 @@ export default function Dashboard() {
         colId: colId,
         text: newAction.text,
         time: newAction.time,
-        color: initialMatrixColumns.find(c => c.id === colId)?.color || 'text-primary'
+        color: matrixColumns.find(c => c.id === colId)?.color || 'text-primary'
       });
       setIsRightPanelOpen(true);
       return;
@@ -571,7 +574,7 @@ export default function Dashboard() {
       colId: colId,
       text: newAction.text,
       time: newAction.time,
-      color: initialMatrixColumns.find(c => c.id === colId)?.color || 'text-primary'
+      color: matrixColumns.find(c => c.id === colId)?.color || 'text-primary'
     });
     setIsRightPanelOpen(true);
   };
@@ -704,19 +707,60 @@ export default function Dashboard() {
   };
   const currentWeekDays = getWeeklyDays(currentDate);
 
+  // Calculate Product Counts
+  const productTypesList = [
+    { id: 'video', label: 'Video', icon: 'videocam' },
+    { id: 'foto', label: 'Foto', icon: 'photo_camera' },
+    { id: 'reel', label: 'Reel', icon: 'slow_motion_video' },
+    { id: 'story', label: 'Story', icon: 'amp_stories' },
+    { id: 'carousel', label: 'Carrusel', icon: 'view_carousel' },
+    { id: 'flyer', label: 'Flyer', icon: 'image' },
+    { id: 'live', label: 'Live', icon: 'live_tv' },
+  ];
+  
+  const productCounts = campaigns
+    .filter(camp => !hiddenCampaignIds.includes(camp.id))
+    .reduce((acc, camp) => {
+      camp.data.forEach((d: any) => {
+        Object.values(d.entries).forEach(actions => {
+          if (Array.isArray(actions)) {
+            actions.forEach((action: any) => {
+              if (action.productType && action.productType !== 'none') {
+                acc[action.productType] = (acc[action.productType] || 0) + 1;
+              }
+              if (action.subtasks && Array.isArray(action.subtasks)) {
+                action.subtasks.forEach((st: any) => {
+                  if (st.productTypes && Array.isArray(st.productTypes)) {
+                    st.productTypes.forEach((pt: string) => {
+                      if (pt !== 'none') {
+                        acc[pt] = (acc[pt] || 0) + 1;
+                      }
+                    });
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+      return acc;
+    }, {} as Record<string, number>);
+
+  const hasProducts = Object.keys(productCounts).length > 0;
+
   return (
-    <div className="flex-1 flex overflow-hidden">
-      <div className="flex-1 flex flex-col min-w-0 bg-surface">
+    <div className="h-full flex overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 bg-surface overflow-hidden">
         <div className="flex-1 p-4 md:p-6 overflow-y-auto no-scrollbar">
           
           <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-1 min-w-0 mr-4">
               <span className="text-[10px] font-bold text-outline-variant uppercase tracking-[0.2em] mb-0.5">
                 {view === 'monthly' ? 'Calendario Mensual' : 'Estrategia de Contenido'}
               </span>
               <h2 className="text-xl font-black text-primary tracking-tight font-headline flex items-center gap-2">
                 {view === 'monthly' ? monthName : currentProject?.name || "Sin Proyecto"}
-                <span className="text-slate-300 text-sm font-light">
+                <span className="text-slate-300 text-sm font-light shrink-0">
                   {view === 'matrix' ? '• Plan Maestro' : `• ${year}`}
                 </span>
               </h2>
@@ -747,6 +791,18 @@ export default function Dashboard() {
                   className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${view === 'yearly' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
                 >
                   Anual
+                </button>
+                <button 
+                  onClick={() => setView('categories')}
+                  className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${view === 'categories' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                >
+                  Categorías
+                </button>
+                <button 
+                  onClick={() => setView('list')}
+                  className={`px-3 py-1 rounded-md text-[11px] font-bold transition-all ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                >
+                  Lista
                 </button>
               </div>
 
@@ -785,6 +841,24 @@ export default function Dashboard() {
             </div>
           </div>
           
+          {/* Product Type Summary Row (Independent Full-Width Row) */}
+          {currentProject && (view === 'matrix' || view === 'categories' || view === 'list') && (
+            <div className="mb-6 w-full animate-in fade-in">
+              <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 pb-1 w-full max-w-full">
+                {productTypesList.map(pt => {
+                  const count = productCounts[pt.id] || 0;
+                  return (
+                    <div key={pt.id} className="flex items-center gap-1.5 bg-surface-container-low border border-outline-variant/10 px-2.5 py-1 rounded-md shadow-sm shrink-0">
+                      <span className="material-symbols-outlined text-[14px] text-primary">{pt.icon}</span>
+                      <span className="text-[10px] font-bold text-outline-variant uppercase tracking-widest">{pt.label}:</span>
+                      <span className="text-[11px] font-black text-primary">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
            {view === 'matrix' ? (
             /* MATRIZ VIEW - UNIFIED MASTER TABLE */
             <div className="pb-12 animate-in fade-in zoom-in-95 duration-500">
@@ -794,7 +868,7 @@ export default function Dashboard() {
                     <tr className="bg-surface-container-low/40 backdrop-blur-sm">
                       <th className="py-4 px-6 text-[11px] font-black uppercase tracking-widest text-slate-400 w-24 border-b border-outline-variant/10">Día</th>
                       
-                      {initialMatrixColumns.map(col => (
+                      {matrixColumns.map(col => (
                         <th key={col.id} className="py-4 px-4 border-b border-outline-variant/10 group cursor-pointer hover:bg-surface-container/50 transition-colors min-w-[160px] max-w-[200px]">
                           <div className="flex items-center justify-between">
                             <div className="overflow-hidden">
@@ -819,25 +893,35 @@ export default function Dashboard() {
                           <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest mt-1 block">{monthName}</span>
                         </td>
                         
-                        {initialMatrixColumns.map(col => {
+                        {matrixColumns.map(col => {
                           // Aggregate strategies from all unhidden campaigns
                               const activeStrategies = campaigns
                                 .filter(camp => !hiddenCampaignIds.includes(camp.id))
                                 .flatMap(camp => {
-                                  const dayData = camp.data.find((d: any) => d.day === dayName);
-                                  const rawEntry = dayData?.entries[col.id];
-                                  const actions = Array.isArray(rawEntry) ? rawEntry : [];
-                                  return actions.map((action: any) => {
-                                    const libItem = action.libraryId ? projectStrategyLibrary.find(l => l.id === action.libraryId) : null;
-                                    return {
-                                      actionId: action.id,
-                                      campaignId: camp.id,
-                                      campaignName: camp.name,
-                                      strategy: libItem ? libItem.name : action.text,
-                                      time: action.time,
-                                      color: libItem?.color || camp.color || col.color,
-                                      libraryId: action.libraryId
-                                    };
+                                  return camp.data.flatMap(d => {
+                                    const rawEntry = d.entries[col.id];
+                                    const actions = Array.isArray(rawEntry) ? rawEntry : [];
+                                    
+                                    return actions.filter(action => {
+                                      if (action.activeDays && action.activeDays.length > 0) {
+                                        const dayIdx = matrixDays.indexOf(dayName) + 1;
+                                        return action.activeDays.includes(dayIdx);
+                                      }
+                                      return d.day === dayName;
+                                    }).map((action: any) => {
+                                      const libItem = action.libraryId ? projectStrategyLibrary.find(l => l.id === action.libraryId) : null;
+                                      return {
+                                        actionId: action.id,
+                                        campaignId: camp.id,
+                                        campaignName: camp.name,
+                                        strategy: libItem ? libItem.name : action.text,
+                                        time: action.time,
+                                        color: libItem?.color || camp.color || col.color,
+                                        libraryId: action.libraryId,
+                                        productType: action.productType,
+                                        originalDay: d.day
+                                      };
+                                    });
                                   });
                                 });
 
@@ -869,7 +953,7 @@ export default function Dashboard() {
                                                 setActiveMatrixSlot({ 
                                                   campaignId: item.campaignId, 
                                                   actionId: item.actionId,
-                                                  day: dayName, 
+                                                  day: item.originalDay, 
                                                   colId: col.id, 
                                                   text: item.strategy, 
                                                   time: item.time,
@@ -885,7 +969,19 @@ export default function Dashboard() {
                                                 <div className={`h-full w-full ${col.bg || 'bg-primary'}`} />
                                               </div>
 
-                                              <p className={`text-[11px] font-bold leading-tight line-clamp-2 ${item.color || col.color}`}>{item.strategy}</p>
+                                              <div className="flex items-start gap-1">
+                                                {item.productType && (
+                                                  <span className="material-symbols-outlined text-[10px] text-slate-400 mt-0.5">
+                                                    {item.productType === 'video' ? 'videocam' : 
+                                                     item.productType === 'foto' ? 'photo_camera' :
+                                                     item.productType === 'reel' ? 'slow_motion_video' :
+                                                     item.productType === 'story' ? 'amp_stories' :
+                                                     item.productType === 'carousel' ? 'view_carousel' :
+                                                     item.productType === 'flyer' ? 'image' : 'live_tv'}
+                                                  </span>
+                                                )}
+                                                <p className={`text-[11px] font-bold leading-tight line-clamp-2 flex-1 ${item.color || col.color}`}>{item.strategy}</p>
+                                              </div>
                                               
                                               {item.time && (
                                                 <div className="mt-1.5 flex items-center gap-1 text-[9px] font-black text-slate-400">
@@ -1132,6 +1228,525 @@ export default function Dashboard() {
                 })}
               </div>
             </div>
+          ) : view === 'categories' ? (
+            /* CATEGORIES VIEW — Grid Layout */
+            <div className="pb-12 animate-in fade-in zoom-in-95 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {matrixColumns.map(col => {
+                const activeStrategies = campaigns
+                    .filter(camp => !hiddenCampaignIds.includes(camp.id))
+                    .flatMap(camp => {
+                      return camp.data.flatMap(d => {
+                        const rawEntry = d.entries[col.id];
+                        const actions = Array.isArray(rawEntry) ? rawEntry : [];
+                        return actions.map((action: any) => ({
+                          ...action,
+                          day: d.day,
+                          campaignName: camp.name
+                        }));
+                      });
+                    });
+
+                  return (
+                    <div key={col.id} className="bg-white rounded-2xl p-6 border border-outline-variant/10 shadow-sm hover:shadow-md transition-all flex flex-col group/cat relative overflow-hidden">
+                      <button 
+                        onClick={() => {
+                          if (confirm(`¿Eliminar categoría "${col.title}"?`)) {
+                            deleteMatrixColumn(col.id);
+                          }
+                        }}
+                        className="absolute top-2 right-2 p-1.5 rounded-lg text-error opacity-0 group-hover/cat:opacity-100 hover:bg-error/10 transition-all z-20"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+
+                      <div className="flex items-center gap-3 mb-6 relative z-10">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${col.bg || 'bg-primary'} text-white shadow-lg shadow-black/5`}>
+                          <span className="material-symbols-outlined text-2xl">
+                            {col.id === 'prod' ? 'movie' : col.id === 'tiktok' ? 'music_note' : col.id === 'ig' ? 'photo_camera' : col.id === 'fb' ? 'group' : 'amp_stories'}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <DebouncedInput 
+                            value={col.title}
+                            onChange={(val) => updateMatrixColumn(col.id, { title: val })}
+                            className={`text-lg font-black tracking-tight bg-transparent border-none focus:ring-0 p-0 w-full ${col.color || 'text-primary'}`}
+                          />
+                          <DebouncedInput 
+                            value={col.subtitle}
+                            onChange={(val) => updateMatrixColumn(col.id, { subtitle: val })}
+                            className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-transparent border-none focus:ring-0 p-0 w-full"
+                          />
+                          <DebouncedInput 
+                            value={col.description || ''}
+                            onChange={(val) => updateMatrixColumn(col.id, { description: val })}
+                            placeholder="Añadir descripción..."
+                            className="text-[9px] text-slate-400 font-medium bg-transparent border-none focus:ring-0 p-0 w-full mt-1"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 flex-1 relative z-10">
+                        {activeStrategies.length > 0 ? (
+                          activeStrategies.map((item, idx) => {
+                            const productTypes = [
+                              { id: 'video', label: 'Video', icon: 'videocam' },
+                              { id: 'foto', label: 'Foto', icon: 'photo_camera' },
+                              { id: 'reel', label: 'Reel', icon: 'slow_motion_video' },
+                              { id: 'story', label: 'Story', icon: 'amp_stories' },
+                              { id: 'carousel', label: 'Carrusel', icon: 'view_carousel' },
+                              { id: 'flyer', label: 'Flyer', icon: 'image' },
+                              { id: 'live', label: 'Live', icon: 'live_tv' },
+                              { id: 'none', label: 'Ninguno', icon: 'horizontal_rule' },
+                            ];
+                            const currentType = item.productType || null;
+                            const dayLabels = ["L", "M", "M", "J", "V", "S", "D"];
+                            const fullDayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+                            const currentDayIdx = fullDayNames.indexOf(item.day);
+                            const itemDays: number[] = item.activeDays || (currentDayIdx >= 0 ? [currentDayIdx + 1] : []);
+
+                            return (
+                              <div 
+                                key={idx} 
+                                className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col gap-2 transition-all hover:bg-white hover:shadow-sm cursor-pointer group/item relative"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">{item.day} • {item.campaignName}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setActiveMatrixSlot({ 
+                                        campaignId: item.campaignId, 
+                                        actionId: item.id,
+                                        day: item.day, 
+                                        colId: col.id, 
+                                        text: item.text, 
+                                        time: item.time,
+                                        color: item.color,
+                                        libraryId: item.libraryId
+                                      }); 
+                                      setIsRightPanelOpen(true);
+                                    }}
+                                    className="material-symbols-outlined text-[12px] opacity-0 group-hover/item:opacity-100 text-slate-300 hover:text-primary transition-all"
+                                  >edit</button>
+                                </div>
+                                <div className="flex flex-col gap-0.5">
+                                  {currentProject?.strategyLibrary?.find((l: any) => l.id === item.libraryId) && (
+                                    <p className={`text-[10px] font-black uppercase tracking-wider leading-tight ${item.color || 'text-slate-800'}`}>
+                                      {currentProject.strategyLibrary.find((l: any) => l.id === item.libraryId).name}
+                                    </p>
+                                  )}
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="text-xs font-medium text-slate-600 leading-tight pt-0.5">
+                                      {item.text || 'Sin descripción'}
+                                    </p>
+                                    {currentType && (() => {
+                                      const pt = productTypes.find(p => p.id === currentType);
+                                      if (!pt) return null;
+                                      return (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const campaign = campaigns.find(c => c.id === item.campaignId);
+                                            if (!campaign) return;
+                                            const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                              ...d,
+                                              entries: {
+                                                ...d.entries,
+                                                [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                                  a.id === item.id ? { ...a, productType: null } : a
+                                                )
+                                              }
+                                            } : d);
+                                            updateCampaign(item.campaignId, { data: newData });
+                                          }}
+                                          className={`shrink-0 px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider flex items-center gap-0.5 transition-all ${col.bg || 'bg-primary'} text-white shadow-sm hover:opacity-80`}
+                                          title={`Quitar ${pt.label}`}
+                                        >
+                                          <span className="material-symbols-outlined text-[10px]">{pt.icon}</span>
+                                          {pt.label}
+                                        </button>
+                                      );
+                                    })()}
+                                  </div>
+                                </div>
+                                {/* Top-level Product Type Selector (Only if none selected) */}
+                                {!currentType && (
+                                  <div className="flex flex-wrap gap-1 pt-1.5">
+                                    {productTypes.map(pt => (
+                                      <button
+                                        key={pt.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const campaign = campaigns.find(c => c.id === item.campaignId);
+                                          if (!campaign) return;
+                                          const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                            ...d,
+                                            entries: {
+                                              ...d.entries,
+                                              [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                                a.id === item.id ? { ...a, productType: pt.id } : a
+                                              )
+                                            }
+                                          } : d);
+                                          updateCampaign(item.campaignId, { data: newData });
+                                        }}
+                                        className="bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider flex items-center gap-0.5 transition-all"
+                                        title={pt.label}
+                                      >
+                                        <span className="material-symbols-outlined text-[10px]">{pt.icon}</span>
+                                        {pt.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Subtasks / Points */}
+                                <div className="flex flex-col gap-1.5 pt-1 mt-1 border-t border-slate-100">
+                                  {(item.subtasks || []).map((subtask: any) => (
+                                    <div key={subtask.id} className="flex flex-col gap-1 pl-2 border-l-2 border-slate-200 py-0.5">
+                                      <div className="flex items-center gap-1 group/st">
+                                        <div className="flex-1">
+                                          <DebouncedInput
+                                            value={subtask.text}
+                                            onChange={(newText) => {
+                                              const campaign = campaigns.find(c => c.id === item.campaignId);
+                                              if (!campaign) return;
+                                              const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                                ...d,
+                                                entries: {
+                                                  ...d.entries,
+                                                  [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                                    a.id === item.id ? { 
+                                                      ...a, 
+                                                      subtasks: (a.subtasks || []).map((st: any) => st.id === subtask.id ? { ...st, text: newText } : st)
+                                                    } : a
+                                                  )
+                                                }
+                                              } : d);
+                                              updateCampaign(item.campaignId, { data: newData });
+                                            }}
+                                            className="text-[10px] font-bold text-slate-700 bg-transparent border-none p-0 focus:ring-0 w-full placeholder-slate-300"
+                                            placeholder="Escribe la subtarea..."
+                                          />
+                                        </div>
+                                        {subtask.productTypes && subtask.productTypes.length > 0 && (() => {
+                                          const pt = productTypes.find(p => p.id === subtask.productTypes[0]);
+                                          if (!pt) return null;
+                                          return (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const campaign = campaigns.find(c => c.id === item.campaignId);
+                                                if (!campaign) return;
+                                                const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                                  ...d,
+                                                  entries: {
+                                                    ...d.entries,
+                                                    [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                                      a.id === item.id ? { 
+                                                        ...a, 
+                                                        subtasks: (a.subtasks || []).map((st: any) => st.id === subtask.id ? { ...st, productTypes: [] } : st)
+                                                      } : a
+                                                    )
+                                                  }
+                                                } : d);
+                                                updateCampaign(item.campaignId, { data: newData });
+                                              }}
+                                              className={`shrink-0 px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-wider flex items-center gap-0.5 transition-all ${col.bg || 'bg-primary'} text-white shadow-sm hover:opacity-80`}
+                                              title={`Quitar ${pt.label}`}
+                                            >
+                                              <span className="material-symbols-outlined text-[10px]">{pt.icon}</span>
+                                              {pt.label}
+                                            </button>
+                                          );
+                                        })()}
+                                        <button 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const campaign = campaigns.find(c => c.id === item.campaignId);
+                                            if (!campaign) return;
+                                            const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                              ...d,
+                                              entries: {
+                                                ...d.entries,
+                                                [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                                  a.id === item.id ? { 
+                                                    ...a, 
+                                                    subtasks: (a.subtasks || []).filter((st: any) => st.id !== subtask.id)
+                                                  } : a
+                                                )
+                                              }
+                                            } : d);
+                                            updateCampaign(item.campaignId, { data: newData });
+                                          }}
+                                          className="material-symbols-outlined text-[12px] text-slate-300 hover:text-error transition-colors opacity-0 group-hover/st:opacity-100 shrink-0"
+                                        >close</button>
+                                      </div>
+                                      
+                                      {/* Product Types Selector for this Subtask (hidden if one is selected) */}
+                                      {(!subtask.productTypes || subtask.productTypes.length === 0) && (
+                                        <div className="flex flex-wrap gap-1">
+                                          {productTypes.map(pt => (
+                                            <button
+                                              key={pt.id}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                const campaign = campaigns.find(c => c.id === item.campaignId);
+                                                if (!campaign) return;
+                                                const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                                  ...d,
+                                                  entries: {
+                                                    ...d.entries,
+                                                    [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                                      a.id === item.id ? { 
+                                                        ...a, 
+                                                        subtasks: (a.subtasks || []).map((st: any) => st.id === subtask.id ? { ...st, productTypes: [pt.id] } : st)
+                                                      } : a
+                                                    )
+                                                  }
+                                                } : d);
+                                                updateCampaign(item.campaignId, { data: newData });
+                                              }}
+                                              className="bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600 px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-wider flex items-center gap-0.5 transition-all"
+                                              title={pt.label}
+                                            >
+                                              <span className="material-symbols-outlined text-[9px]">{pt.icon}</span>
+                                              {pt.label}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                  
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const campaign = campaigns.find(c => c.id === item.campaignId);
+                                      if (!campaign) return;
+                                      const newSubtask = { id: `st_${Date.now()}`, text: '', productTypes: [] };
+                                      const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                        ...d,
+                                        entries: {
+                                          ...d.entries,
+                                          [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                            a.id === item.id ? { ...a, subtasks: [...(a.subtasks || []), newSubtask] } : a
+                                          )
+                                        }
+                                      } : d);
+                                      updateCampaign(item.campaignId, { data: newData });
+                                    }}
+                                    className="flex items-center gap-1 text-[8px] font-bold text-slate-400 hover:text-primary transition-colors w-fit pt-0.5"
+                                  >
+                                    <span className="material-symbols-outlined text-[10px]">add</span>
+                                    AÑADIR CONTENIDO
+                                  </button>
+                                </div>
+
+                                {/* Day Selector */}
+                                <div className="flex items-center justify-between pt-1 border-t border-slate-100 mt-1">
+                                  <span className="text-[7px] font-black text-slate-400 uppercase tracking-tighter">Días:</span>
+                                  <div className="flex gap-0.5">
+                                    {dayLabels.map((label, dIdx) => {
+                                      const dayNum = dIdx + 1;
+                                      const isActive = itemDays.includes(dayNum);
+                                      return (
+                                        <button
+                                          key={dIdx}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newDays = isActive 
+                                              ? itemDays.filter(d => d !== dayNum)
+                                              : [...itemDays, dayNum].sort();
+                                            const campaign = campaigns.find(c => c.id === item.campaignId);
+                                            if (!campaign) return;
+                                            const newData = campaign.data.map((d: any) => d.day === item.day ? {
+                                              ...d,
+                                              entries: {
+                                                ...d.entries,
+                                                [col.id]: (d.entries[col.id] || []).map((a: any) => 
+                                                  a.id === item.id ? { ...a, activeDays: newDays } : a
+                                                )
+                                              }
+                                            } : d);
+                                            updateCampaign(item.campaignId, { data: newData });
+                                          }}
+                                          className={`w-5 h-5 rounded text-[7px] font-black transition-all ${
+                                            isActive 
+                                              ? `${col.bg || 'bg-primary'} text-white shadow-sm` 
+                                              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                          }`}
+                                        >
+                                          {label}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="py-12 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-xl">
+                            <span className="material-symbols-outlined text-2xl text-slate-200 mb-2">inventory_2</span>
+                            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Sin acciones</p>
+                          </div>
+                        )}
+
+                        <button 
+                          onClick={() => {
+                            // Default to Monday of Base Campaign
+                            const baseCamp = campaigns.find(c => c.isBase) || campaigns[0];
+                            handleAddActionToSlot('Lunes', col.id, baseCamp?.id);
+                          }}
+                          className="mt-4 w-full py-2 border-2 border-dashed border-outline-variant/20 rounded-xl text-[9px] font-black text-outline-variant/60 hover:text-primary hover:border-primary/30 transition-all flex items-center justify-center gap-1.5 uppercase tracking-widest"
+                        >
+                          <span className="material-symbols-outlined text-sm">add</span>
+                          Nuevo Item
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Add New Category Card */}
+                <button 
+                  onClick={() => addMatrixColumn({ title: 'Nueva Categoría', subtitle: 'Descripción...', color: 'text-primary', bg: 'bg-primary' })}
+                  className="bg-surface-container-low/30 rounded-2xl p-6 border-2 border-dashed border-outline-variant/30 flex flex-col items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary/50 transition-all group"
+                >
+                  <div className="w-12 h-12 rounded-full border-2 border-dashed border-current flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-2xl">add</span>
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest">Agregar Categoría</span>
+                </button>
+              </div>
+            </div>
+          ) : view === 'list' ? (
+            /* LIST VIEW (TABLA) */
+            <div className="pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white rounded-2xl border border-outline-variant/10 shadow-sm overflow-hidden overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="bg-surface-container-low/40 border-b border-outline-variant/10">
+                      <th className="py-4 px-6 font-black uppercase tracking-widest text-slate-400 text-[10px] w-48">Categoría</th>
+                      <th className="py-4 px-6 font-black uppercase tracking-widest text-slate-400 text-[10px]">Contenido</th>
+                      <th className="py-4 px-6 font-black uppercase tracking-widest text-slate-400 text-[10px] w-40">Formato</th>
+                      <th className="py-4 px-6 font-black uppercase tracking-widest text-slate-400 text-[10px] w-40">Días</th>
+                      <th className="py-4 px-6 font-black uppercase tracking-widest text-slate-400 text-[10px] w-48">Redes Sociales</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matrixColumns.flatMap(col => 
+                      campaigns.filter(camp => !hiddenCampaignIds.includes(camp.id)).flatMap(camp => 
+                        camp.data.flatMap(d => {
+                          const rawEntry = d.entries[col.id];
+                          const actions = Array.isArray(rawEntry) ? rawEntry : [];
+                          return actions.map(action => ({
+                            ...action,
+                            colId: col.id,
+                            colTitle: col.title,
+                            colColor: col.color,
+                            colBg: col.bg,
+                            day: d.day,
+                            campaignName: camp.name
+                          }));
+                        })
+                      )
+                    ).map((item, idx) => {
+                      const currentType = item.productType || null;
+                      const pt = productTypesList.find(p => p.id === currentType);
+                      const dayNamesShort = ["L", "M", "M", "J", "V", "S", "D"];
+                      const fullDayNames = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+                      const currentDayIdx = fullDayNames.indexOf(item.day);
+                      
+                      return (
+                        <tr key={`${item.id}-${idx}`} className="border-b border-outline-variant/10 hover:bg-slate-50 transition-colors group cursor-pointer" onClick={() => {
+                          setActiveMatrixSlot({ 
+                            campaignId: item.campaignId, 
+                            actionId: item.id,
+                            day: item.day, 
+                            colId: item.colId, 
+                            text: item.text, 
+                            time: item.time,
+                            color: item.color,
+                            libraryId: item.libraryId
+                          }); 
+                          setIsRightPanelOpen(true);
+                        }}>
+                          {/* Categoría */}
+                          <td className="py-3 px-6">
+                            <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${item.colBg || 'bg-primary'} text-white shadow-sm`}>
+                              {item.colTitle}
+                            </span>
+                          </td>
+                          {/* Contenido */}
+                          <td className="py-3 px-6 font-medium text-slate-700">
+                            <div className="line-clamp-2 leading-tight" title={item.text}>{item.text || 'Sin descripción'}</div>
+                            {item.libraryId && currentProject?.strategyLibrary?.find(l => l.id === item.libraryId) && (
+                              <div className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">
+                                Pilar: {currentProject.strategyLibrary.find(l => l.id === item.libraryId)?.name}
+                              </div>
+                            )}
+                          </td>
+                          {/* Formato */}
+                          <td className="py-3 px-6">
+                            {pt ? (
+                              <div className="flex items-center gap-1.5 bg-surface-container-low border border-outline-variant/10 w-fit px-2 py-1 rounded-md shadow-sm">
+                                <span className="material-symbols-outlined text-[14px] text-primary">{pt.icon}</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">{pt.label}</span>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest border border-dashed border-outline-variant/30 px-2 py-1 rounded-md">Sin Asignar</span>
+                            )}
+                          </td>
+                          {/* Días */}
+                          <td className="py-3 px-6">
+                            <div className="flex gap-1">
+                              {dayNamesShort.map((dName, dIdx) => {
+                                const isActive = currentDayIdx === dIdx || (item.activeDays && item.activeDays.includes(dIdx + 1));
+                                return (
+                                  <div key={dIdx} className={`w-5 h-5 flex items-center justify-center rounded-[4px] text-[9px] font-black ${isActive ? 'bg-primary text-white shadow-sm ring-1 ring-primary/20' : 'bg-slate-100 text-slate-400'}`}>
+                                    {dName}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </td>
+                          {/* Redes */}
+                          <td className="py-3 px-6">
+                            <div className="flex gap-1.5">
+                              {[
+                                { id: 'fb', icon: 'facebook' }, 
+                                { id: 'ig', icon: 'camera_alt' }, 
+                                { id: 'tiktok', icon: 'music_note' }, 
+                                { id: 'story', icon: 'amp_stories' },
+                                { id: 'prod', icon: 'movie' }
+                              ].map(net => {
+                                const isMatch = item.colId === net.id || (item.colId === 'ig' && net.id === 'story');
+                                return (
+                                  <div key={net.id} className={`w-6 h-6 flex items-center justify-center rounded-md border shadow-sm ${isMatch ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-surface-container-lowest border-outline-variant/10 text-slate-300'}`}>
+                                    <span className="material-symbols-outlined text-[13px]">{net.icon}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {matrixColumns.flatMap(col => campaigns.flatMap(camp => camp.data.flatMap(d => d.entries[col.id] || []))).length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center text-slate-400">
+                          <span className="material-symbols-outlined text-4xl block mb-2 opacity-50">list_alt</span>
+                          <span className="text-xs font-bold uppercase tracking-widest">No hay contenidos en la matriz</span>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           ) : (
             <>
               {/* Calendar Grid (Weekly) */}
@@ -1157,7 +1772,7 @@ export default function Dashboard() {
                       const dayData = camp.data.find((d: any) => d.day === dayName);
                       if (!dayData) return [];
                       const actions: any[] = [];
-                      const colOrder = ['prod', 'tiktok', 'ig', 'fb', 'stories'];
+                      const colOrder = matrixColumns.map(c => c.id);
                       colOrder.forEach(colId => {
                         const colActions = dayData.entries[colId];
                         if (Array.isArray(colActions)) {
@@ -1167,7 +1782,7 @@ export default function Dashboard() {
                               campaignId: camp.id,
                               strategy: action.text,
                               colId,
-                              color: initialMatrixColumns.find(c => c.id === colId)?.color || 'text-primary'
+                              color: matrixColumns.find(c => c.id === colId)?.color || 'text-primary'
                             });
                           });
                         }
@@ -1206,7 +1821,7 @@ export default function Dashboard() {
                           const matchingEvents = events.filter(e => e.matrixSlot?.colId === action.colId || e.type?.toLowerCase() === action.colId);
                           matchingEvents.forEach(e => matchedEventIds.add(e.id));
                           
-                          const colDef = initialMatrixColumns.find(c => c.id === action.colId);
+                          const colDef = matrixColumns.find(c => c.id === action.colId);
                           const colName = colDef ? colDef.title : action.colId;
 
                           return (
@@ -1313,11 +1928,11 @@ export default function Dashboard() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="shrink-0 border-l border-outline-variant/10 bg-surface-container-low overflow-hidden"
           >
-            <aside className="w-80 flex flex-col p-6 h-full overflow-y-auto no-scrollbar relative">
+            <aside className="w-80 flex flex-col h-full overflow-hidden no-scrollbar relative">
               
               {activeMatrixSlot ? (
                 /* BUCKET GESTOR UI - HIGH DENSITY */
-                <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex flex-col h-full p-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-3">
                       <button 
@@ -1475,7 +2090,7 @@ export default function Dashboard() {
                     
                     <div className="flex-1 overflow-y-auto no-scrollbar space-y-1.5 pb-4">
                       {globalContents
-                        .filter(c => c.matrixSlot.day === activeMatrixSlot.day && c.matrixSlot.colId === activeMatrixSlot.colId && c.type !== 'ESTRATÉGICO')
+                        .filter(c => c.matrixSlot?.day === activeMatrixSlot.day && c.matrixSlot?.colId === activeMatrixSlot.colId && c.type !== 'ESTRATÉGICO')
                         .map((content) => (
                         <div 
                           key={content.id}
@@ -1503,7 +2118,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col h-full animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="flex flex-col h-full p-6 animate-in fade-in slide-in-from-right-4 duration-300">
                   {/* Tab Nav */}
                   <div className="flex bg-surface-container-high/50 p-1 rounded-xl border border-outline-variant/10 mb-5 shrink-0 gap-0.5">
                     {([['tareas','Tareas'],['plan','Plan'],['hitos','Suger.'],['pilares','Pilares'],['metas','Metas']] as const).map(([tab, label]) => (

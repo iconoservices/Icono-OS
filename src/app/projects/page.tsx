@@ -6,6 +6,7 @@ import { useProject } from "@/context/ProjectContext";
 import { db } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
+import { generateSlug } from "@/lib/utils";
 import {
   DndContext,
   closestCenter,
@@ -456,7 +457,7 @@ export default function Projects() {
 
   const handleSelectProject = (proj: any) => {
     setCurrentProject(proj);
-    router.push("/");
+    router.push(`/projects/${proj.slug}`);
   };
 
   // ── CREATE ──
@@ -464,11 +465,13 @@ export default function Projects() {
     setBusy(true);
     try {
       const id = Date.now().toString();
+      const slug = generateSlug(form.name, projects);
       const initials = form.name.split(" ").map((w: string) => w[0]).join("").slice(0, 3).toUpperCase();
       const hex = form.accent.hex.replace("#", "");
       const newProject = {
         id,
         name: form.name.trim(),
+        slug,
         category: form.category,
         subtitle: form.subtitle.trim() || form.category,
         accent: form.accent.value,

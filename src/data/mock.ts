@@ -3,6 +3,7 @@
 export interface Project {
   id: string;
   name: string;
+  slug: string;
   category: string;
   subtitle: string;
   accent: string;
@@ -10,11 +11,22 @@ export interface Project {
   colors: string[];
 }
 
+export interface SubTask {
+  id: string;
+  text: string;
+  productTypes: string[];
+}
+
 export interface StrategicAction {
   id: string;
   text: string;
   time?: string;
   campaignId: string;
+  activeDays?: number[];
+  productType?: string | null;
+  subtasks?: SubTask[];
+  color?: string;
+  libraryId?: string;
 }
 
 export interface CampaignMatrix {
@@ -82,6 +94,7 @@ export const projectsData: Project[] = [
   {
     id: "1",
     name: "EcoConstruct",
+    slug: "ecoconstruct",
     category: "Construcción",
     subtitle: "Infraestructura Urbana Sostenible",
     accent: "bg-[#2ECC71]",
@@ -91,6 +104,7 @@ export const projectsData: Project[] = [
   {
     id: "2",
     name: "Sunset Lounge Bar",
+    slug: "sunset",
     category: "Gastronomía",
     subtitle: "Gastronomía Latina y Coctelería",
     accent: "bg-[#E67E22]",
@@ -100,6 +114,7 @@ export const projectsData: Project[] = [
   {
     id: "3",
     name: "Lumina Studio",
+    slug: "lumina",
     category: "Creatividad",
     subtitle: "Medios Digitales Experimentales",
     accent: "bg-[#9B59B6]",
@@ -109,6 +124,7 @@ export const projectsData: Project[] = [
   {
     id: "4",
     name: "Aether Finance",
+    slug: "aether",
     category: "FinTech",
     subtitle: "Gestión de Activos Descentralizados",
     accent: "bg-[#3498DB]",

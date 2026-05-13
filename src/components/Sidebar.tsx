@@ -127,9 +127,10 @@ export default function Sidebar() {
                   </div>
                 </div>
 
-                {sortedProjects.map((proj) => (
-                  <div 
+                {projects.map((proj) => (
+                  <Link 
                     key={proj.id}
+                    href={`/projects/${proj.slug}`}
                     onClick={() => {
                       setCurrentProject(proj);
                       setIsDropdownOpen(false);
@@ -141,7 +142,7 @@ export default function Sidebar() {
                       <div className={`text-xs font-bold truncate ${currentProject?.id === proj.id ? 'text-primary' : 'text-slate-700 dark:text-slate-200'}`}>{proj.name}</div>
                       <div className="text-[10px] text-slate-500 truncate">{proj.subtitle}</div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
               <div className="p-2 border-t border-slate-100 dark:border-white/5">

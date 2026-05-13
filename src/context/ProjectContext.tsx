@@ -15,6 +15,7 @@ import {
   deleteDoc,
   writeBatch
 } from "firebase/firestore";
+import { generateSlug } from "@/lib/utils";
 
 interface ProjectContextType {
   projects: Project[];
@@ -39,6 +40,11 @@ interface ProjectContextType {
   addStrategyTemplate: (template: any) => Promise<void>;
   updateStrategyTemplate: (id: string, updates: any) => Promise<void>;
   deleteStrategyTemplate: (id: string) => Promise<void>;
+  // Matrix Columns (Categories)
+  matrixColumns: any[];
+  addMatrixColumn: (column: any) => Promise<void>;
+  updateMatrixColumn: (id: string, updates: any) => Promise<void>;
+  deleteMatrixColumn: (id: string) => Promise<void>;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -50,6 +56,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
   const [globalContents, setGlobalContents] = useState<any[]>([]);
   const [allProjectCampaigns, setAllProjectCampaigns] = useState<Record<string, CampaignMatrix[]>>({});
   const [strategyLibrary, setStrategyLibrary] = useState<any[]>([]);
+  const [matrixColumns, setMatrixColumns] = useState<any[]>([]);
 
   // 1. Initial Sync & Seeding
   useEffect(() => {
@@ -65,6 +72,17 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         });
         batch.commit();
       } else {
+        // Migration: Ensure all projects have slugs
+        const projectsToUpdate = projectsList.filter(p => !p.slug);
+        if (projectsToUpdate.length > 0) {
+          const batch = writeBatch(db);
+          projectsToUpdate.forEach(p => {
+            const slug = generateSlug(p.name, projectsList.filter(pr => pr.slug));
+            batch.update(doc(db, "projects", p.id), { slug });
+          });
+          batch.commit();
+        }
+
         setProjects(projectsList);
         // Do not auto-set if already set or if explicitly null
         if (!currentProject && currentProject !== null) {
@@ -104,6 +122,28 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       setStrategyLibrary(libraryList);
     });
 
+    // Listen to Matrix Columns
+    const unsubColumns = onSnapshot(collection(db, "matrixColumns"), (snapshot) => {
+      const columnsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      
+      if (columnsList.length === 0) {
+        const initialMatrixColumns = [
+          { id: 'prod', title: 'Producción', subtitle: 'Acción en Campo', color: 'text-emerald-500', bg: 'bg-emerald-500', isAction: true },
+          { id: 'tiktok', title: 'TikTok', subtitle: 'Humor / Cercano', color: 'text-[#FE2C55]', bg: 'bg-[#FE2C55]' },
+          { id: 'ig', title: 'Instagram', subtitle: 'Estético / Info', color: 'text-[#E4405F]', bg: 'bg-[#E4405F]' },
+          { id: 'fb', title: 'Facebook', subtitle: 'Promo / Comunidad', color: 'text-[#1877F2]', bg: 'bg-[#1877F2]' },
+          { id: 'stories', title: 'Meta Stories', subtitle: 'Historias / 24h', color: 'text-[#E1306C]', bg: 'bg-[#E1306C]' }
+        ];
+        const batch = writeBatch(db);
+        initialMatrixColumns.forEach(col => {
+          batch.set(doc(db, "matrixColumns", col.id), col);
+        });
+        batch.commit();
+      } else {
+        setMatrixColumns(columnsList);
+      }
+    });
+
     // Listen to Contents (Calendar Events)
     const unsubContents = onSnapshot(collection(db, "contents"), (snapshot) => {
       const contentsList = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
@@ -125,6 +165,7 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       unsubCampaigns();
       unsubContents();
       unsubLibrary();
+      unsubColumns();
     };
   }, [currentProject]);
 
@@ -180,6 +221,20 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     await deleteDoc(doc(db, "strategyLibrary", id));
   };
 
+  // CRUD for Matrix Columns
+  const addMatrixColumn = async (column: any) => {
+    const id = column.id || `col_${Date.now()}`;
+    await setDoc(doc(db, "matrixColumns", id), { ...column, id });
+  };
+
+  const updateMatrixColumn = async (id: string, updates: any) => {
+    await updateDoc(doc(db, "matrixColumns", id), updates);
+  };
+
+  const deleteMatrixColumn = async (id: string) => {
+    await deleteDoc(doc(db, "matrixColumns", id));
+  };
+
   return (
     <ProjectContext.Provider value={{ 
       projects, 
@@ -201,7 +256,11 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
       strategyLibrary,
       addStrategyTemplate,
       updateStrategyTemplate,
-      deleteStrategyTemplate
+      deleteStrategyTemplate,
+      matrixColumns,
+      addMatrixColumn,
+      updateMatrixColumn,
+      deleteMatrixColumn
     }}>
       {children}
     </ProjectContext.Provider>
