@@ -1331,9 +1331,9 @@ export default function Dashboard() {
                                   >edit</button>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                  {currentProject?.strategyLibrary?.find((l: any) => l.id === item.libraryId) && (
+                                  {strategyLibrary.find((l: any) => l.id === item.libraryId) && (
                                     <p className={`text-[10px] font-black uppercase tracking-wider leading-tight ${item.color || 'text-slate-800'}`}>
-                                      {currentProject.strategyLibrary.find((l: any) => l.id === item.libraryId).name}
+                                      {strategyLibrary.find((l: any) => l.id === item.libraryId)?.name}
                                     </p>
                                   )}
                                   <div className="flex items-start justify-between gap-2">
@@ -1683,9 +1683,9 @@ export default function Dashboard() {
                           {/* Contenido */}
                           <td className="py-3 px-6 font-medium text-slate-700">
                             <div className="line-clamp-2 leading-tight" title={item.text}>{item.text || 'Sin descripción'}</div>
-                            {item.libraryId && currentProject?.strategyLibrary?.find(l => l.id === item.libraryId) && (
+                            {item.libraryId && strategyLibrary.find((l: any) => l.id === item.libraryId) && (
                               <div className="text-[9px] font-black text-primary uppercase tracking-widest mt-1">
-                                Pilar: {currentProject.strategyLibrary.find(l => l.id === item.libraryId)?.name}
+                                Pilar: {strategyLibrary.find((l: any) => l.id === item.libraryId)?.name}
                               </div>
                             )}
                           </td>
