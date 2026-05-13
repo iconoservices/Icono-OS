@@ -957,7 +957,7 @@ export default function Dashboard() {
                                                   colId: col.id, 
                                                   text: item.strategy, 
                                                   time: item.time,
-                                                  color: item.color,
+                                                  color: item.color || 'text-primary',
                                                   libraryId: item.libraryId
                                                 }); 
                                                 setIsRightPanelOpen(true); 
@@ -1322,7 +1322,7 @@ export default function Dashboard() {
                                         colId: col.id, 
                                         text: item.text, 
                                         time: item.time,
-                                        color: item.color,
+                                        color: item.color || 'text-primary',
                                         libraryId: item.libraryId
                                       }); 
                                       setIsRightPanelOpen(true);
@@ -1669,7 +1669,7 @@ export default function Dashboard() {
                             colId: item.colId, 
                             text: item.text, 
                             time: item.time,
-                            color: item.color,
+                            color: item.color || 'text-primary',
                             libraryId: item.libraryId
                           }); 
                           setIsRightPanelOpen(true);
